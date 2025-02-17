@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://midnightspa.com/sitemap.xml
+
+# Disallow admin and api routes
+Disallow: /api/*
+Disallow: /dashboard/*
+Disallow: /admin/*
+
+# Allow static assets
+Allow: /_next/static/
+Allow: /static/
+Allow: /images/
+Allow: /media/ 

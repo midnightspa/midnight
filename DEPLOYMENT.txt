@@ -1,0 +1,260 @@
+# Midnight Spa Website Deployment Guide
+# Hetzner Cloud + GitHub Deployment Process
+
+## 1. Prerequisites
+- GitHub account
+- Hetzner Cloud account
+- Domain name (optional but recommended)
+- Node.js 18+ installed locally
+- PostgreSQL database
+
+## 2. GitHub Repository Setup
+1. Create a new GitHub repository
+2. Initialize Git in your local project:
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git branch -M main
+   git remote add origin YOUR_GITHUB_REPO_URL
+   git push -u origin main
+   ```
+
+## 3. Hetzner Cloud Server Setup
+1. Create a new project in Hetzner Cloud Console
+2. Create a new server:
+   - Choose Ubuntu 22.04
+   - Select CPX21 (4 vCPU, 8 GB RAM) or higher
+   - Choose a datacenter location
+   - Add your SSH key
+   - Create server
+
+## 4. Server Initial Configuration
+1. SSH into your server:
+   ```bash
+   ssh root@YOUR_SERVER_IP
+   ```
+
+2. Update system and install dependencies:
+   ```bash
+   apt update && apt upgrade -y
+   apt install -y nodejs npm postgresql nginx certbot python3-certbot-nginx
+   ```
+
+3. Install Node.js 18:
+   ```bash
+   curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+   apt-get install -y nodejs
+   ```
+
+## 5. PostgreSQL Database Setup
+1. Access PostgreSQL:
+   ```bash
+   sudo -u postgres psql
+   ```
+
+2. Create database and user:
+   ```sql
+   CREATE DATABASE midnightspa;
+   CREATE USER midnightadmin WITH ENCRYPTED PASSWORD 'your_strong_password';
+   GRANT ALL PRIVILEGES ON DATABASE midnightspa TO midnightadmin;
+   ```
+
+## 6. Application Deployment
+1. Clone repository:
+   ```bash
+   cd /var/www
+   git clone YOUR_GITHUB_REPO_URL midnightspa
+   cd midnightspa
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Create .env file:
+   ```bash
+   nano .env
+   ```
+   Add:
+   ```
+   DATABASE_URL="postgresql://midnightadmin:your_strong_password@localhost:5432/midnightspa"
+   NEXTAUTH_SECRET="your_nextauth_secret"
+   NEXTAUTH_URL="https://your-domain.com"
+   ```
+
+4. Run database migrations:
+   ```bash
+   npx prisma migrate deploy
+   ```
+
+5. Build the application:
+   ```bash
+   npm run build
+   ```
+
+## 7. PM2 Process Manager Setup
+1. Install PM2:
+   ```bash
+   npm install -g pm2
+   ```
+
+2. Start application:
+   ```bash
+   pm2 start npm --name "midnightspa" -- start
+   pm2 startup
+   pm2 save
+   ```
+
+## 8. Nginx Configuration
+1. Create Nginx config:
+   ```bash
+   nano /etc/nginx/sites-available/midnightspa
+   ```
+
+2. Add configuration:
+   ```nginx
+   server {
+       listen 80;
+       server_name your-domain.com www.your-domain.com;
+
+       location / {
+           proxy_pass http://localhost:3000;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection 'upgrade';
+           proxy_set_header Host $host;
+           proxy_cache_bypass $http_upgrade;
+       }
+   }
+   ```
+
+3. Enable site:
+   ```bash
+   ln -s /etc/nginx/sites-available/midnightspa /etc/nginx/sites-enabled/
+   nginx -t
+   systemctl restart nginx
+   ```
+
+## 9. SSL Certificate Setup
+1. Install SSL certificate:
+   ```bash
+   certbot --nginx -d your-domain.com -d www.your-domain.com
+   ```
+
+## 10. GitHub Actions Setup (Automated Deployment)
+1. Create `.github/workflows/deploy.yml` in your repository:
+   ```yaml
+   name: Deploy to Production
+   
+   on:
+     push:
+       branches: [ main ]
+   
+   jobs:
+     deploy:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v2
+         
+         - name: Deploy to Server
+           uses: appleboy/ssh-action@master
+           with:
+             host: ${{ secrets.SERVER_IP }}
+             username: ${{ secrets.SERVER_USER }}
+             key: ${{ secrets.SSH_PRIVATE_KEY }}
+             script: |
+               cd /var/www/midnightspa
+               git pull origin main
+               npm install
+               npm run build
+               pm2 restart midnightspa
+   ```
+
+2. Add GitHub Secrets:
+   - SERVER_IP: Your Hetzner server IP
+   - SERVER_USER: root (or your deployment user)
+   - SSH_PRIVATE_KEY: Your SSH private key
+
+## 11. Maintenance and Monitoring
+1. Setup basic monitoring:
+   ```bash
+   pm2 install pm2-logrotate
+   pm2 monit
+   ```
+
+2. Setup regular backups:
+   ```bash
+   pg_dump -U midnightadmin midnightspa > /backup/midnightspa_$(date +%Y%m%d).sql
+   ```
+
+## 12. Security Considerations
+1. Setup UFW firewall:
+   ```bash
+   ufw allow OpenSSH
+   ufw allow 'Nginx Full'
+   ufw enable
+   ```
+
+2. Create deployment user (optional but recommended):
+   ```bash
+   adduser deployer
+   usermod -aG sudo deployer
+   ```
+
+## 13. Post-Deployment Checks
+1. Verify application is running:
+   ```bash
+   pm2 status
+   curl http://localhost:3000
+   ```
+
+2. Check logs:
+   ```bash
+   pm2 logs midnightspa
+   ```
+
+3. Monitor system resources:
+   ```bash
+   htop
+   ```
+
+## Troubleshooting
+- Check Nginx logs: `/var/log/nginx/error.log`
+- Check PM2 logs: `pm2 logs`
+- Check application logs: `pm2 logs midnightspa`
+- Database connection: `psql -U midnightadmin -d midnightspa`
+
+## Regular Maintenance Tasks
+1. System updates:
+   ```bash
+   apt update && apt upgrade -y
+   ```
+
+2. SSL certificate renewal (automatic with certbot):
+   ```bash
+   certbot renew --dry-run
+   ```
+
+3. Database backups:
+   ```bash
+   pg_dump -U midnightadmin midnightspa > /backup/midnightspa_$(date +%Y%m%d).sql
+   ```
+
+4. Log rotation (automatic with PM2 logrotate)
+
+## Rollback Procedure
+1. Using Git:
+   ```bash
+   cd /var/www/midnightspa
+   git reset --hard HEAD^
+   npm install
+   npm run build
+   pm2 restart midnightspa
+   ```
+
+2. Database rollback:
+   ```bash
+   psql -U midnightadmin midnightspa < /backup/midnightspa_YYYYMMDD.sql
+   ``` 

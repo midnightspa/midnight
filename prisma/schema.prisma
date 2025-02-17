@@ -1,0 +1,317 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  name      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  posts     Post[]
+  videos    Video[]
+  products  Product[]
+}
+
+model PostCategory {
+  id              String           @id @default(cuid())
+  title           String
+  description     String?          @db.Text
+  thumbnail       String?
+  slug            String           @unique
+  seoTitle        String?
+  seoDescription  String?          @db.Text
+  seoKeywords     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  subcategories   PostSubCategory[] @relation("CategoryToSubCategory")
+  childCategories PostSubCategory[] @relation("ParentToChild")
+  posts           Post[]           @relation("CategoryToPosts")
+}
+
+model PostSubCategory {
+  id                String       @id @default(cuid())
+  title             String
+  description       String?      @db.Text
+  thumbnail         String?
+  slug              String       @unique
+  seoTitle          String?
+  seoDescription    String?      @db.Text
+  seoKeywords       String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  category          PostCategory @relation("CategoryToSubCategory", fields: [categoryId], references: [id])
+  categoryId        String
+  parentCategory    PostCategory? @relation("ParentToChild", fields: [parentCategoryId], references: [id])
+  parentCategoryId  String?
+  posts             Post[]       @relation("SubCategoryToPosts")
+
+  @@index([categoryId])
+  @@index([parentCategoryId])
+}
+
+model Post {
+  id              String           @id @default(cuid())
+  title           String
+  slug            String           @unique
+  excerpt         String?          @db.Text
+  content         String           @db.Text
+  thumbnail       String?
+  published       Boolean          @default(false)
+  category        PostCategory     @relation("CategoryToPosts", fields: [categoryId], references: [id])
+  categoryId      String
+  subcategory     PostSubCategory? @relation("SubCategoryToPosts", fields: [subcategoryId], references: [id])
+  subcategoryId   String?
+  tags            String[]
+  seoTitle        String?
+  seoDescription  String?          @db.Text
+  seoKeywords     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  author          User             @relation(fields: [authorId], references: [id])
+  authorId        String
+
+  @@index([categoryId])
+  @@index([subcategoryId])
+  @@index([authorId])
+}
+
+model Video {
+  id              String    @id @default(cuid())
+  title           String
+  slug            String    @unique
+  description     String?   @db.Text
+  youtubeUrl      String
+  seoTitle        String?
+  seoDescription  String?   @db.Text
+  seoKeywords     String?
+  published       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  author          User      @relation(fields: [authorId], references: [id])
+  authorId        String
+
+  @@index([authorId])
+}
+
+model ProductCategory {
+  id              String              @id @default(cuid())
+  title           String
+  description     String?             @db.Text
+  thumbnail       String?
+  slug            String              @unique
+  type            String?             @default("DIGITAL")
+  seoTitle        String?
+  seoDescription  String?             @db.Text
+  seoKeywords     String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  subcategories   ProductSubCategory[] @relation("CategoryToSubCategory")
+  childCategories ProductSubCategory[] @relation("ParentToChild")
+  products        Product[]           @relation("CategoryToProducts")
+}
+
+model ProductSubCategory {
+  id                String          @id @default(cuid())
+  title             String
+  description       String?         @db.Text
+  thumbnail         String?
+  slug              String          @unique
+  seoTitle          String?
+  seoDescription    String?         @db.Text
+  seoKeywords       String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  category          ProductCategory @relation("CategoryToSubCategory", fields: [categoryId], references: [id])
+  categoryId        String
+  parentCategory    ProductCategory? @relation("ParentToChild", fields: [parentCategoryId], references: [id])
+  parentCategoryId  String?
+
+  @@index([categoryId])
+  @@index([parentCategoryId])
+}
+
+model Product {
+  id              String           @id @default(cuid())
+  title           String
+  slug            String           @unique
+  description     String           @db.Text
+  type            ProductType
+  price           Float
+  salePrice       Float?
+  thumbnail       String?
+  gallery         String[]
+  digitalAssets   String[]
+  stock           Int?             @default(0)
+  published       Boolean          @default(false)
+  featured        Boolean          @default(false)
+  category        ProductCategory  @relation("CategoryToProducts", fields: [categoryId], references: [id])
+  categoryId      String
+  bundles         Bundle[]         @relation("BundleProducts")
+  bundledIn       Bundle[]         @relation("BundleIncludes")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  author          User             @relation(fields: [authorId], references: [id])
+  authorId        String
+
+  @@index([categoryId])
+  @@index([authorId])
+}
+
+model Bundle {
+  id              String    @id @default(cuid())
+  title           String
+  slug            String    @unique
+  description     String    @db.Text
+  price           Float
+  salePrice       Float?
+  thumbnail       String?
+  published       Boolean   @default(false)
+  products        Product[] @relation("BundleProducts")
+  includedIn      Product[] @relation("BundleIncludes")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([slug])
+}
+
+enum ProductType {
+  DIGITAL
+  PHYSICAL
+}
+
+model SiteSettings {
+  id                  String   @id @default(cuid())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Basic SEO
+  siteName            String?
+  siteTitle           String?
+  siteDescription     String?
+  siteKeywords        String?
+
+  // Social Media
+  ogTitle            String?
+  ogDescription      String?
+  ogImage            String?
+  twitterHandle      String?
+  twitterCardType    String?
+
+  // Organization
+  organizationName   String?
+  organizationLogo   String?
+
+  // Contact
+  contactEmail       String?
+  contactPhone       String?
+  contactAddress     String?
+
+  // Analytics
+  googleAnalyticsId      String?
+  googleSiteVerification String?
+
+  // Additional
+  robotsTxt          String?
+  sitemapXml         String?
+  favicon            String?
+}
+
+model Subscriber {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  firstName     String?
+  lastName      String?
+  status        SubscriberStatus @default(ACTIVE)
+  confirmedAt   DateTime?
+  unsubscribedAt DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  campaigns     CampaignRecipient[]
+}
+
+model EmailTemplate {
+  id          String    @id @default(cuid())
+  name        String
+  subject     String
+  content     String    @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  campaigns   Campaign[]
+}
+
+model Campaign {
+  id          String    @id @default(cuid())
+  name        String
+  subject     String
+  content     String    @db.Text
+  status      CampaignStatus @default(DRAFT)
+  template    EmailTemplate? @relation(fields: [templateId], references: [id])
+  templateId  String?
+  sentAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  recipients  CampaignRecipient[]
+
+  @@index([templateId])
+}
+
+model CampaignRecipient {
+  id          String    @id @default(cuid())
+  campaign    Campaign  @relation(fields: [campaignId], references: [id])
+  campaignId  String
+  subscriber  Subscriber @relation(fields: [subscriberId], references: [id])
+  subscriberId String
+  status      SendStatus @default(PENDING)
+  sentAt      DateTime?
+  openedAt    DateTime?
+  clickedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([campaignId])
+  @@index([subscriberId])
+}
+
+model EmailConfig {
+  id          String    @id @default(cuid())
+  provider    EmailProvider
+  apiKey      String
+  fromEmail   String
+  fromName    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+enum SubscriberStatus {
+  PENDING
+  ACTIVE
+  UNSUBSCRIBED
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  FAILED
+}
+
+enum SendStatus {
+  PENDING
+  SENT
+  FAILED
+  OPENED
+  CLICKED
+}
+
+enum EmailProvider {
+  SENDGRID
+  ELASTIC_EMAIL
+}
