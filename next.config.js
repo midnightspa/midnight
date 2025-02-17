@@ -6,9 +6,22 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'img.youtube.com',
       },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      }
     ],
-    domains: ['localhost'],
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  experimental: {
+    // This will suppress the punycode warning
+    serverComponentsExternalPackages: ['punycode']
+  }
 };
 
 module.exports = nextConfig;

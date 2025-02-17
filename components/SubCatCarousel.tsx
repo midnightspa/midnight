@@ -3,9 +3,6 @@
 import React, { useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Disclosure } from '@headlessui/react';
-import { motion } from 'framer-motion';
-import { FiChevronDown } from 'react-icons/fi';
 
 interface SubCategory {
   id: string;

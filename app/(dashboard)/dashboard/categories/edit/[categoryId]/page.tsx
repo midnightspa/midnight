@@ -5,22 +5,21 @@ import prisma from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import CategoryForm from '../../components/CategoryForm';
 
-interface EditCategoryPageProps {
+interface PageProps {
   params: {
     categoryId: string;
   };
+  searchParams: { [key: string]: string | string[] | undefined };
 }
 
-export default async function EditCategoryPage({
-  params,
-}: EditCategoryPageProps) {
+export default async function EditCategoryPage(props: PageProps) {
   const session = await getServerSession(authOptions);
   
   if (!session) {
     redirect('/auth/signin');
   }
 
-  const categoryId = params.categoryId;
+  const categoryId = props.params.categoryId;
 
   // Try to find as category first
   let item = await prisma.postCategory.findUnique({

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FiRefreshCw, FiDownload, FiCheck, FiAlertTriangle } from 'react-icons/fi';
+import { toast } from 'sonner';
 
 interface SEOMetrics {
   totalPages: number;
@@ -18,214 +18,141 @@ interface SEOMetrics {
 }
 
 export default function SEODashboard() {
-  const [loading, setLoading] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [metrics, setMetrics] = useState<SEOMetrics>({
-    totalPages: 0,
-    indexedPages: 0,
-    missingMetaTags: {
-      title: 0,
-      description: 0,
-      ogImage: 0,
-    },
-    performance: {
-      mobile: 0,
-      desktop: 0,
-    },
-  });
+  const [metrics, setMetrics] = useState<SEOMetrics | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    const fetchMetrics = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch('/api/seo/metrics');
-        if (!response.ok) throw new Error('Failed to fetch metrics');
-        const data = await response.json();
-        setMetrics(data);
-      } catch (error) {
-        console.error('Error fetching SEO metrics:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchMetrics();
   }, []);
 
+  const fetchMetrics = async () => {
+    try {
+      const response = await fetch('/api/seo/metrics');
+      if (!response.ok) throw new Error('Failed to fetch metrics');
+      const data = await response.json();
+      setMetrics(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch metrics');
+    }
+  };
+
   const generateSitemap = async () => {
-    setGenerating(true);
+    setIsGenerating(true);
     try {
       const response = await fetch('/api/sitemap/generate', {
         method: 'POST',
       });
+      
       if (!response.ok) throw new Error('Failed to generate sitemap');
-      // Show success message
-      alert('Sitemap generated successfully!');
+      
+      toast.success('Sitemap generated successfully');
+      await fetchMetrics(); // Refresh metrics after generating sitemap
     } catch (error) {
       console.error('Error generating sitemap:', error);
-      alert('Failed to generate sitemap');
+      toast.error('Failed to generate sitemap');
     } finally {
-      setGenerating(false);
+      setIsGenerating(false);
     }
   };
 
+  if (!metrics) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">SEO Dashboard</h1>
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">SEO Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-600">
+            Monitor your site's SEO performance and optimize content
+          </p>
+        </div>
         <button
-          onClick={() => window.location.reload()}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+          onClick={generateSitemap}
+          disabled={isGenerating}
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
         >
-          <FiRefreshCw className="w-4 h-4" />
-          Refresh
+          {isGenerating ? 'Generating...' : 'Generate Sitemap'}
         </button>
       </div>
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-sm font-medium text-gray-500">Total Pages</h3>
-          <p className="mt-2 text-3xl font-semibold">{metrics.totalPages}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-sm font-medium text-gray-500">Indexed Pages</h3>
-          <p className="mt-2 text-3xl font-semibold">{metrics.indexedPages}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-sm font-medium text-gray-500">Mobile Score</h3>
-          <p className="mt-2 text-3xl font-semibold">{metrics.performance.mobile}%</p>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-sm font-medium text-gray-500">Desktop Score</h3>
-          <p className="mt-2 text-3xl font-semibold">{metrics.performance.desktop}%</p>
-        </div>
-      </div>
-
-      {/* Meta Tags Section */}
-      <div className="bg-white rounded-lg shadow-sm">
-        <div className="p-6">
-          <h2 className="text-lg font-semibold mb-4">Meta Tags Analysis</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className={`w-2 h-2 rounded-full ${metrics.missingMetaTags.title === 0 ? 'bg-green-500' : 'bg-red-500'}`} />
-                <span className="font-medium">Meta Titles</span>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
               </div>
-              <span className="text-sm text-gray-500">
-                {metrics.missingMetaTags.title} pages missing
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className={`w-2 h-2 rounded-full ${metrics.missingMetaTags.description === 0 ? 'bg-green-500' : 'bg-red-500'}`} />
-                <span className="font-medium">Meta Descriptions</span>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Total Pages</dt>
+                  <dd className="text-lg font-semibold text-gray-900">{metrics.totalPages}</dd>
+                </dl>
               </div>
-              <span className="text-sm text-gray-500">
-                {metrics.missingMetaTags.description} pages missing
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className={`w-2 h-2 rounded-full ${metrics.missingMetaTags.ogImage === 0 ? 'bg-green-500' : 'bg-red-500'}`} />
-                <span className="font-medium">OG Images</span>
-              </div>
-              <span className="text-sm text-gray-500">
-                {metrics.missingMetaTags.ogImage} pages missing
-              </span>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Sitemap Section */}
-      <div className="bg-white rounded-lg shadow-sm">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-semibold">Sitemap Management</h2>
-            <div className="flex gap-3">
-              <button
-                onClick={generateSitemap}
-                disabled={generating}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                {generating ? (
-                  <>
-                    <FiRefreshCw className="w-4 h-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <FiRefreshCw className="w-4 h-4" />
-                    Generate Sitemap
-                  </>
-                )}
-              </button>
-              <a
-                href="/sitemap.xml"
-                target="_blank"
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                <FiDownload className="w-4 h-4" />
-                Download Sitemap
-              </a>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="p-4 bg-blue-50 text-blue-700 rounded-lg">
-              <h3 className="font-medium mb-2">Sitemap Information</h3>
-              <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>Last generated: <span className="font-medium">Not available</span></li>
-                <li>Total URLs: <span className="font-medium">{metrics.totalPages}</span></li>
-                <li>Location: <code className="bg-blue-100 px-2 py-1 rounded">public/sitemap.xml</code></li>
-              </ul>
-            </div>
-
-            <div className="p-4 bg-yellow-50 text-yellow-700 rounded-lg">
-              <h3 className="font-medium mb-2">Recommendations</h3>
-              <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>Submit your sitemap to Google Search Console</li>
-                <li>Keep your sitemap up to date by regenerating after content changes</li>
-                <li>Ensure all important pages are included in the sitemap</li>
-              </ul>
+        <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Indexed Pages</dt>
+                  <dd className="text-lg font-semibold text-gray-900">{metrics.indexedPages}</dd>
+                </dl>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* SEO Checklist */}
-      <div className="bg-white rounded-lg shadow-sm">
-        <div className="p-6">
-          <h2 className="text-lg font-semibold mb-4">SEO Checklist</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <FiCheck className="w-5 h-5 text-green-500" />
-                <span className="font-medium">SSL Certificate</span>
+        <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-6 w-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
               </div>
-              <span className="text-sm text-green-500">Active</span>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Missing Meta Tags</dt>
+                  <dd className="text-lg font-semibold text-gray-900">
+                    {metrics.missingMetaTags.title + metrics.missingMetaTags.description}
+                  </dd>
+                </dl>
+              </div>
             </div>
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <FiCheck className="w-5 h-5 text-green-500" />
-                <span className="font-medium">Mobile Responsiveness</span>
+          </div>
+        </div>
+
+        <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-6 w-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
-              <span className="text-sm text-green-500">Optimized</span>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <FiAlertTriangle className="w-5 h-5 text-yellow-500" />
-                <span className="font-medium">Image Alt Tags</span>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Mobile Performance</dt>
+                  <dd className="text-lg font-semibold text-gray-900">{metrics.performance.mobile}%</dd>
+                </dl>
               </div>
-              <span className="text-sm text-yellow-500">Partial</span>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <FiCheck className="w-5 h-5 text-green-500" />
-                <span className="font-medium">Robots.txt</span>
-              </div>
-              <span className="text-sm text-green-500">Configured</span>
             </div>
           </div>
         </div>

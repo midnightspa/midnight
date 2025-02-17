@@ -91,8 +91,8 @@ export default function VideoArchive() {
                   <span className="text-sm">{videos.length} videos</span>
                   <span className="text-sm">1.2K subscribers</span>
                 </div>
-                <p className="mt-2 text-sm text-neutral-600 max-w-2xl">
-                Welcome to MidnightSpa, the best place in the world to unwind and have a good night's sleep. Our channel is devoted to assisting you in relaxing, reducing stress, and overcoming sleeplessness. Calm yourself into a deep, refreshing sleep through the help of guided relaxation techniques, relaxing music, and peaceful images. Whether you're having trouble falling asleep at night or you're just looking for a peaceful getaway, MidnightSpa has the ideal solution. You should sleep well, therefore subscribe and change your nights with our calming material.
+                <p className="text-lg text-gray-600 mb-8">
+                  Explore our collection of videos designed to help you understand and master the art of relaxation. Whether you&apos;re new to spa treatments or looking to enhance your wellness journey, you&apos;ll find valuable insights and techniques in our video library. Let&apos;s embark on this journey together.
                 </p>
               </div>
 

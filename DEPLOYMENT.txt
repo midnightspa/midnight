@@ -20,16 +20,62 @@
    git push -u origin main
    ```
 
-## 3. Hetzner Cloud Server Setup
+## 3. Cloudflare Setup
+1. Add your domain to Cloudflare:
+   - Log in to Cloudflare
+   - Click "Add a Site"
+   - Enter your domain name
+   - Select the Free plan
+   - Follow the instructions to update your domain nameservers
+
+2. Configure Cloudflare settings:
+   - SSL/TLS: Set to "Full"
+   - Enable "Always Use HTTPS"
+   - Edge Certificates:
+     - Enable "Always Use HTTPS"
+     - Set Minimum TLS Version to 1.2
+     - Enable "Opportunistic Encryption"
+     - Enable "TLS 1.3"
+   - Configure Page Rules (optional):
+     - Add a page rule for www to non-www redirect
+     - Add caching rules for static assets
+
+3. Add DNS Records:
+   - Type: A
+   - Name: @ (or your domain)
+   - Content: Your Hetzner server IP
+   - Proxy status: Proxied
+   - Add another record for www subdomain if needed
+
+## 4. Hetzner Cloud Server Setup
 1. Create a new project in Hetzner Cloud Console
 2. Create a new server:
-   - Choose Ubuntu 22.04
+   - Choose Ubuntu 24.04
    - Select CPX21 (4 vCPU, 8 GB RAM) or higher
    - Choose a datacenter location
    - Add your SSH key
+   - Enable IPv6
+   - Add cloud-init script:
+     ```yaml
+     #cloud-config
+     package_update: true
+     package_upgrade: true
+     packages:
+       - fail2ban
+       - ufw
+     ```
    - Create server
 
-## 4. Server Initial Configuration
+3. Configure Hetzner Firewall:
+   - Create a new firewall
+   - Add the following rules:
+     - Allow incoming TCP 80 (HTTP)
+     - Allow incoming TCP 443 (HTTPS)
+     - Allow incoming TCP 22 (SSH)
+     - Allow incoming ICMP
+   - Apply the firewall to your server
+
+## 5. Server Initial Configuration
 1. SSH into your server:
    ```bash
    ssh root@YOUR_SERVER_IP
@@ -47,7 +93,7 @@
    apt-get install -y nodejs
    ```
 
-## 5. PostgreSQL Database Setup
+## 6. PostgreSQL Database Setup
 1. Access PostgreSQL:
    ```bash
    sudo -u postgres psql
@@ -60,7 +106,7 @@
    GRANT ALL PRIVILEGES ON DATABASE midnightspa TO midnightadmin;
    ```
 
-## 6. Application Deployment
+## 7. Application Deployment
 1. Clone repository:
    ```bash
    cd /var/www
@@ -94,7 +140,7 @@
    npm run build
    ```
 
-## 7. PM2 Process Manager Setup
+## 8. PM2 Process Manager Setup
 1. Install PM2:
    ```bash
    npm install -g pm2
@@ -107,17 +153,67 @@
    pm2 save
    ```
 
-## 8. Nginx Configuration
+## 9. Nginx Configuration
 1. Create Nginx config:
    ```bash
    nano /etc/nginx/sites-available/midnightspa
    ```
 
-2. Add configuration:
+2. Update the Nginx configuration to work with Cloudflare:
    ```nginx
    server {
        listen 80;
+       listen [::]:80;
        server_name your-domain.com www.your-domain.com;
+
+       # Redirect HTTP to HTTPS
+       return 301 https://$server_name$request_uri;
+   }
+
+   server {
+       listen 443 ssl http2;
+       listen [::]:443 ssl http2;
+       server_name your-domain.com www.your-domain.com;
+
+       # SSL configuration
+       ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+       ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+       ssl_session_timeout 1d;
+       ssl_session_cache shared:SSL:50m;
+       ssl_session_tickets off;
+
+       # Modern configuration
+       ssl_protocols TLSv1.2 TLSv1.3;
+       ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+       ssl_prefer_server_ciphers off;
+
+       # HSTS (uncomment if you're sure)
+       # add_header Strict-Transport-Security "max-age=63072000" always;
+
+       # Cloudflare real IP restoration
+       set_real_ip_from 103.21.244.0/22;
+       set_real_ip_from 103.22.200.0/22;
+       set_real_ip_from 103.31.4.0/22;
+       set_real_ip_from 104.16.0.0/13;
+       set_real_ip_from 104.24.0.0/14;
+       set_real_ip_from 108.162.192.0/18;
+       set_real_ip_from 131.0.72.0/22;
+       set_real_ip_from 141.101.64.0/18;
+       set_real_ip_from 162.158.0.0/15;
+       set_real_ip_from 172.64.0.0/13;
+       set_real_ip_from 173.245.48.0/20;
+       set_real_ip_from 188.114.96.0/20;
+       set_real_ip_from 190.93.240.0/20;
+       set_real_ip_from 197.234.240.0/22;
+       set_real_ip_from 198.41.128.0/17;
+       set_real_ip_from 2400:cb00::/32;
+       set_real_ip_from 2606:4700::/32;
+       set_real_ip_from 2803:f800::/32;
+       set_real_ip_from 2405:b500::/32;
+       set_real_ip_from 2405:8100::/32;
+       set_real_ip_from 2c0f:f248::/32;
+       set_real_ip_from 2a06:98c0::/29;
+       real_ip_header CF-Connecting-IP;
 
        location / {
            proxy_pass http://localhost:3000;
@@ -125,6 +221,9 @@
            proxy_set_header Upgrade $http_upgrade;
            proxy_set_header Connection 'upgrade';
            proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
            proxy_cache_bypass $http_upgrade;
        }
    }
@@ -137,13 +236,13 @@
    systemctl restart nginx
    ```
 
-## 9. SSL Certificate Setup
+## 10. SSL Certificate Setup
 1. Install SSL certificate:
    ```bash
    certbot --nginx -d your-domain.com -d www.your-domain.com
    ```
 
-## 10. GitHub Actions Setup (Automated Deployment)
+## 11. GitHub Actions Setup (Automated Deployment)
 1. Create `.github/workflows/deploy.yml` in your repository:
    ```yaml
    name: Deploy to Production
@@ -177,7 +276,7 @@
    - SERVER_USER: root (or your deployment user)
    - SSH_PRIVATE_KEY: Your SSH private key
 
-## 11. Maintenance and Monitoring
+## 12. Maintenance and Monitoring
 1. Setup basic monitoring:
    ```bash
    pm2 install pm2-logrotate
@@ -189,7 +288,7 @@
    pg_dump -U midnightadmin midnightspa > /backup/midnightspa_$(date +%Y%m%d).sql
    ```
 
-## 12. Security Considerations
+## 13. Security Considerations
 1. Setup UFW firewall:
    ```bash
    ufw allow OpenSSH
@@ -203,7 +302,7 @@
    usermod -aG sudo deployer
    ```
 
-## 13. Post-Deployment Checks
+## 14. Post-Deployment Checks
 1. Verify application is running:
    ```bash
    pm2 status

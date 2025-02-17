@@ -28,7 +28,15 @@ export async function generateMetadata(pageTitle?: string, pageDescription?: str
   };
 }
 
-export function generateStructuredData(settings: any) {
+interface SiteSettings {
+  organizationName?: string;
+  organizationLogo?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  contactAddress?: string;
+}
+
+export function generateStructuredData(settings: SiteSettings | null) {
   // Return a minimal structured data if settings is null
   if (!settings) {
     return {
