@@ -30,20 +30,30 @@ export async function POST(req: Request) {
     // Hash password
     const hashedPassword = await hash(password, 12);
 
+    // Check if this is the first user (super admin)
+    const userCount = await prisma.user.count();
+    const isSuperAdmin = email === 'mounir@clicksalesmedia.com';
+
     // Create user
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
+        role: isSuperAdmin ? 'SUPER_ADMIN' : 'PENDING',
+        isApproved: isSuperAdmin,
       },
     });
 
     return NextResponse.json(
       {
-        message: 'User created successfully',
+        message: isSuperAdmin 
+          ? 'Super admin created successfully' 
+          : 'Registration successful. Please wait for admin approval.',
         user: {
           id: user.id,
           email: user.email,
+          role: user.role,
+          isApproved: user.isApproved,
         },
       },
       { status: 201 }

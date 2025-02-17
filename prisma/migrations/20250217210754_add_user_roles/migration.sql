@@ -1,0 +1,6 @@
+-- CreateEnum
+CREATE TYPE "Role" AS ENUM ('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'WRITER', 'PENDING');
+
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "isApproved" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "role" "Role" NOT NULL DEFAULT 'PENDING';

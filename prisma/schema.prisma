@@ -8,15 +8,17 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  password  String
-  name      String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  posts     Post[]
-  videos    Video[]
-  products  Product[]
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String
+  role          Role      @default(PENDING)
+  isApproved    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  posts         Post[]
+  videos        Video[]
+  products      Product[]
 }
 
 model PostCategory {
@@ -314,4 +316,12 @@ enum SendStatus {
 enum EmailProvider {
   SENDGRID
   ELASTIC_EMAIL
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  MANAGER
+  WRITER
+  PENDING
 }
