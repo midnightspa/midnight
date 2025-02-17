@@ -20,10 +20,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
     tsconfigPath: './tsconfig.json'
   },
-  experimental: {
-    // This will suppress the punycode warning
-    serverComponentsExternalPackages: ['punycode']
-  }
+  serverExternalPackages: ['punycode']
 };
 
 module.exports = nextConfig;
