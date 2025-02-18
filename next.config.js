@@ -30,7 +30,10 @@ const nextConfig = {
     tsconfigPath: './tsconfig.json'
   },
   experimental: {
-    serverActions: true,
+    serverActions: {
+      allowedOrigins: ['localhost:3000', '5.161.86.130', 'themidnightspa.com'],
+      bodySizeLimit: '2mb'
+    },
     optimizePackageImports: ['@heroicons/react'],
   },
   logging: {
