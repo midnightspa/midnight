@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/auth.config';
+import { submitUrlToIndex } from '@/lib/google-indexing';
 
 export async function POST(req: Request) {
   try {
@@ -50,6 +51,22 @@ export async function POST(req: Request) {
         authorId: session.user.id,
       },
     });
+
+    // If the video is published, submit it to Google Search Console
+    if (published) {
+      const url = `https://themidnightspa.com/videos/${video.slug}`;
+      await submitUrlToIndex(url);
+      
+      // Log the indexing request
+      await prisma.seoIndexingLog.create({
+        data: {
+          urls: [url],
+          type: 'URL_UPDATED',
+          results: { status: 'submitted' },
+          userId: session.user.id,
+        },
+      });
+    }
 
     return NextResponse.json(video, { status: 201 });
   } catch (error) {

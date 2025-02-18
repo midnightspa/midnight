@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/auth.config';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import { submitUrlToIndex } from '@/lib/google-indexing';
 
 export async function POST(req: Request) {
   try {
@@ -85,6 +86,22 @@ export async function POST(req: Request) {
         },
       },
     });
+
+    // If the post is published, submit it to Google Search Console
+    if (post.published) {
+      const url = `https://themidnightspa.com/posts/${post.slug}`;
+      await submitUrlToIndex(url);
+      
+      // Log the indexing request
+      await prisma.seoIndexingLog.create({
+        data: {
+          urls: [url],
+          type: 'URL_UPDATED',
+          results: { status: 'submitted' },
+          userId: session.user.id,
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,
