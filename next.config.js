@@ -7,8 +7,16 @@ const nextConfig = {
         hostname: 'img.youtube.com',
       },
       {
+        protocol: 'https',
+        hostname: 'themidnightspa.com',
+      },
+      {
         protocol: 'http',
         hostname: 'localhost',
+      },
+      {
+        protocol: 'http',
+        hostname: '5.161.86.130',
       }
     ],
   },

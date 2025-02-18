@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemaps
-Sitemap: https://midnightspa.com/sitemap.xml
+Sitemap: https://themidnightspa.com/sitemap.xml
 
 # Disallow admin and api routes
 Disallow: /api/*
