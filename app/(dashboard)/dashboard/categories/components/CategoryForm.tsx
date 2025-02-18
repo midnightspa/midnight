@@ -24,6 +24,7 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(
     initialData?.thumbnail || null
   );
+  const [error, setError] = useState<string | null>(null);
 
   const handleThumbnailChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -58,19 +59,15 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
       const formData = new FormData(e.currentTarget);
-      const data = {
-        title: formData.get('title'),
-        slug: formData.get('slug'),
-        description: formData.get('description'),
-        thumbnail: thumbnailPreview,
-        seoTitle: formData.get('seoTitle'),
-        seoDescription: formData.get('seoDescription'),
-        seoKeywords: formData.get('seoKeywords'),
-        categoryId: formData.get('categoryId'),
-      };
+      
+      // Add the thumbnail URL if it exists
+      if (thumbnailPreview) {
+        formData.set('thumbnail', thumbnailPreview);
+      }
 
       const url = initialData
         ? `/api/categories/${initialData.id}`
@@ -78,25 +75,41 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
 
       const response = await fetch(url, {
         method: initialData ? 'PATCH' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+        body: formData,
       });
 
-      if (!response.ok) throw new Error('Failed to save category');
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to save category');
+      }
 
       router.push('/dashboard/categories');
       router.refresh();
     } catch (error) {
       console.error('Error saving category:', error);
+      setError(error instanceof Error ? error.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-700">
           Title
