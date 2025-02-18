@@ -3,7 +3,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Poppins } from 'next/font/google';
 import prisma from '@/lib/prisma';
-import { generateMetadata } from '@/lib/metadata';
 import type { Metadata } from 'next';
 
 const poppins = Poppins({
@@ -39,7 +38,7 @@ interface RelatedPost {
 }
 
 // Add metadata generation
-export async function generateMetadataForPost({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const post = await prisma.post.findUnique({
     where: {
       slug: params.slug,
@@ -55,23 +54,31 @@ export async function generateMetadataForPost({ params }: { params: { slug: stri
   });
 
   if (!post) {
-    return generateMetadata({
+    return {
       title: 'Post Not Found',
       description: 'The requested post could not be found.',
-      noIndex: true,
-    });
+      robots: { index: false, follow: false },
+    };
   }
 
-  return generateMetadata({
+  return {
     title: post.seoTitle || post.title,
     description: post.seoDescription || post.excerpt || undefined,
     keywords: post.seoKeywords || undefined,
-    image: post.thumbnail || undefined,
-    type: 'article',
-  });
+    openGraph: {
+      title: post.seoTitle || post.title,
+      description: post.seoDescription || post.excerpt || undefined,
+      type: 'article',
+      images: post.thumbnail ? [{ url: post.thumbnail }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.seoTitle || post.title,
+      description: post.seoDescription || post.excerpt || undefined,
+      images: post.thumbnail ? [post.thumbnail] : undefined,
+    },
+  };
 }
-
-export { generateMetadataForPost as generateMetadata };
 
 export default async function PostPage({ params }: { params: { slug: string } }) {
   const post = await prisma.post.findUnique({
