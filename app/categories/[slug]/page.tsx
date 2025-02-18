@@ -5,6 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Poppins } from 'next/font/google';
+import type { Metadata } from 'next';
+import prisma from '@/lib/prisma';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -58,6 +60,50 @@ interface SubCategory {
   description: string | null;
   thumbnail: string | null;
   slug: string;
+}
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const category = await prisma.postCategory.findUnique({
+    where: {
+      slug: params.slug,
+    },
+    select: {
+      title: true,
+      description: true,
+      seoTitle: true,
+      seoDescription: true,
+      seoKeywords: true,
+      thumbnail: true,
+    },
+  });
+
+  if (!category) {
+    return {
+      title: 'Category Not Found',
+      description: 'The requested category could not be found.',
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const title = category.seoTitle || category.title;
+
+  return {
+    title: title,
+    description: category.seoDescription || category.description || undefined,
+    keywords: category.seoKeywords || undefined,
+    openGraph: {
+      title,
+      description: category.seoDescription || category.description || undefined,
+      type: 'website',
+      images: category.thumbnail ? [{ url: category.thumbnail }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: category.seoDescription || category.description || undefined,
+      images: category.thumbnail ? [category.thumbnail] : undefined,
+    },
+  };
 }
 
 export default function CategoryArchive() {

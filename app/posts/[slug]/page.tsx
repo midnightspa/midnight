@@ -64,9 +64,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const title = post.seoTitle || post.title;
 
   return {
-    title: {
-      absolute: title,
-    },
+    title: title,
     description: post.seoDescription || post.excerpt || undefined,
     keywords: post.seoKeywords || undefined,
     openGraph: {

@@ -13,8 +13,8 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
   title: {
-    template: '%s',
-    default: 'Midnight Spa - Your ultimate destination for relaxation and wellness'
+    template: '%s | Midnight Spa',
+    default: 'Midnight Spa'
   },
   description: 'Your ultimate destination for relaxation and wellness',
   icons: {

@@ -78,9 +78,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const title = video.seoTitle || video.title;
 
   return {
-    title: {
-      absolute: title,
-    },
+    title: title,
     description: video.seoDescription || video.description || undefined,
     keywords: video.seoKeywords || undefined,
     openGraph: {
