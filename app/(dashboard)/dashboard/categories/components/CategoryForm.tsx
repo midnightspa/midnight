@@ -97,12 +97,15 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
       }
 
       const url = initialData
-        ? `/api/categories/${initialData.id}`
+        ? `/api/categories?id=${initialData.id}`
         : '/api/categories';
 
       const response = await fetch(url, {
-        method: initialData ? 'PATCH' : 'POST',
+        method: initialData ? 'PUT' : 'POST',
         body: formData,
+        headers: {
+          'Accept': 'application/json',
+        },
       });
 
       if (!response.ok) {
@@ -111,7 +114,7 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
       }
 
       // Force revalidation of the categories page
-      await fetch('/api/revalidate?path=/api/categories', {
+      await fetch('/api/revalidate?path=/dashboard/categories', {
         method: 'POST',
       });
 
