@@ -29,6 +29,10 @@ const nextConfig = {
     ignoreBuildErrors: true,
     tsconfigPath: './tsconfig.json'
   },
+  experimental: {
+    serverActions: true,
+    optimizePackageImports: ['@heroicons/react'],
+  },
   logging: {
     fetches: {
       fullUrl: true,
@@ -46,6 +50,10 @@ const nextConfig = {
         ],
       },
     ];
+  },
+  webpack: (config) => {
+    config.resolve.fallback = { fs: false, path: false };
+    return config;
   },
 };
 
