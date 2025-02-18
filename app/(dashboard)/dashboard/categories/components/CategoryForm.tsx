@@ -36,19 +36,18 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Fetch categories for the parent category dropdown
     const fetchCategories = async () => {
       try {
         const response = await fetch('/api/categories');
         if (!response.ok) throw new Error('Failed to fetch categories');
         const data = await response.json();
-        // Filter out the current category if we're editing
         const filteredCategories = initialData
           ? data.filter((cat: Category) => cat.id !== initialData.id)
           : data;
         setCategories(filteredCategories);
       } catch (error) {
         console.error('Error fetching categories:', error);
+        setError('Failed to fetch categories. Please try refreshing the page.');
       }
     };
 
@@ -57,13 +56,33 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
 
   const handleThumbnailChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image size should be less than 5MB');
+      return;
+    }
+
+    try {
       setThumbnailFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setThumbnailPreview(reader.result as string);
       };
+      reader.onerror = () => {
+        setError('Failed to read the image file');
+      };
       reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error handling thumbnail:', error);
+      setError('Failed to process the image. Please try another file.');
     }
   };
 
@@ -84,6 +103,14 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
       const form = e.currentTarget;
       const formData = new FormData(form);
       
+      // Validate required fields
+      const title = formData.get('title') as string;
+      const slug = formData.get('slug') as string;
+      
+      if (!title || !slug) {
+        throw new Error('Title and slug are required');
+      }
+
       // Handle thumbnail upload
       if (thumbnailFile) {
         formData.set('thumbnail', thumbnailFile);
@@ -100,8 +127,9 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
         body: formData,
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || 'Failed to save category');
       }
 
@@ -121,7 +149,7 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <div className="flex">
@@ -208,6 +236,7 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
                 alt="Thumbnail preview"
                 fill
                 className="object-cover rounded-lg"
+                unoptimized
               />
             </div>
           )}
@@ -221,6 +250,9 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
             />
           </label>
         </div>
+        <p className="mt-2 text-sm text-gray-500">
+          Recommended: JPG, PNG, or GIF. Max 5MB.
+        </p>
       </div>
 
       <div>
