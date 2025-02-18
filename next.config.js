@@ -28,11 +28,8 @@ const nextConfig = {
     ignoreBuildErrors: true,
     tsconfigPath: './tsconfig.json'
   },
-  serverExternalPackages: ['punycode'],
   experimental: {
-    serverActions: {
-      allowedOrigins: ['localhost:3000', 'themidnightspa.com', '5.161.86.130']
-    },
+    serverActions: true
   },
   headers: async () => {
     return [
