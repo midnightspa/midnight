@@ -28,9 +28,6 @@ const nextConfig = {
     ignoreBuildErrors: true,
     tsconfigPath: './tsconfig.json'
   },
-  experimental: {
-    serverActions: true
-  },
   headers: async () => {
     return [
       {
