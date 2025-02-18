@@ -1,8 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { slugify } from '@/lib/utils';
+
+interface Category {
+  id: string;
+  title: string;
+  slug: string;
+}
 
 interface CategoryFormProps {
   initialData?: {
@@ -21,10 +27,31 @@ interface CategoryFormProps {
 export default function CategoryForm({ initialData }: CategoryFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(
     initialData?.thumbnail || null
   );
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Fetch categories for the parent category dropdown
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categories');
+        if (!response.ok) throw new Error('Failed to fetch categories');
+        const data = await response.json();
+        // Filter out the current category if we're editing
+        const filteredCategories = initialData
+          ? data.filter((cat: Category) => cat.id !== initialData.id)
+          : data;
+        setCategories(filteredCategories);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, [initialData]);
 
   const handleThumbnailChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -75,7 +102,19 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
 
       const response = await fetch(url, {
         method: initialData ? 'PATCH' : 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: formData.get('title'),
+          slug: formData.get('slug'),
+          description: formData.get('description'),
+          thumbnail: thumbnailPreview,
+          categoryId: formData.get('categoryId') || null,
+          seoTitle: formData.get('seoTitle'),
+          seoDescription: formData.get('seoDescription'),
+          seoKeywords: formData.get('seoKeywords'),
+        }),
       });
 
       if (!response.ok) {
@@ -94,7 +133,7 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <div className="flex">
@@ -109,6 +148,25 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
           </div>
         </div>
       )}
+
+      <div>
+        <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700">
+          Parent Category (Optional - Select to create a subcategory)
+        </label>
+        <select
+          id="categoryId"
+          name="categoryId"
+          defaultValue={initialData?.categoryId || ''}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        >
+          <option value="">None (Create as main category)</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.title}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-700">
