@@ -19,6 +19,7 @@ const nextConfig = {
         hostname: '5.161.86.130',
       }
     ],
+    unoptimized: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
@@ -27,6 +28,11 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
     tsconfigPath: './tsconfig.json'
+  },
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
   },
   headers: async () => {
     return [
