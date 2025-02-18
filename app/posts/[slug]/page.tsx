@@ -61,19 +61,23 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     };
   }
 
+  const title = post.seoTitle || post.title;
+
   return {
-    title: post.seoTitle || post.title,
+    title: {
+      absolute: title,
+    },
     description: post.seoDescription || post.excerpt || undefined,
     keywords: post.seoKeywords || undefined,
     openGraph: {
-      title: post.seoTitle || post.title,
+      title,
       description: post.seoDescription || post.excerpt || undefined,
       type: 'article',
       images: post.thumbnail ? [{ url: post.thumbnail }] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
-      title: post.seoTitle || post.title,
+      title,
       description: post.seoDescription || post.excerpt || undefined,
       images: post.thumbnail ? [post.thumbnail] : undefined,
     },

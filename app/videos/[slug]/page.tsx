@@ -75,19 +75,23 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const youtubeId = video.youtubeUrl.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/user\/\S+|\/ytscreeningroom\?v=|\/sandalsResorts#\w\/\w\/.*\/))([^\/&\?]{10,12})/)?.[1];
   const thumbnail = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg` : undefined;
 
+  const title = video.seoTitle || video.title;
+
   return {
-    title: video.seoTitle || video.title,
+    title: {
+      absolute: title,
+    },
     description: video.seoDescription || video.description || undefined,
     keywords: video.seoKeywords || undefined,
     openGraph: {
-      title: video.seoTitle || video.title,
+      title,
       description: video.seoDescription || video.description || undefined,
       type: 'video.other',
       images: thumbnail ? [{ url: thumbnail }] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
-      title: video.seoTitle || video.title,
+      title,
       description: video.seoDescription || video.description || undefined,
       images: thumbnail ? [thumbnail] : undefined,
     },
