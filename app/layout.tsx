@@ -11,9 +11,47 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'Midnight Spa',
+  title: {
+    default: 'Midnight Spa',
+    template: '%s | Midnight Spa'
+  },
   description: 'Your ultimate destination for relaxation and wellness',
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
+  icons: {
+    icon: [
+      { url: '/favicon/favicon.ico' },
+      { url: '/favicon/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon/favicon-32x32.png', sizes: '32x32', type: 'image/png' }
+    ],
+    apple: [
+      { url: '/favicon/apple-touch-icon.png' }
+    ],
+    other: [
+      {
+        rel: 'mask-icon',
+        url: '/favicon/safari-pinned-tab.svg',
+      },
+    ],
+  },
+  manifest: '/favicon/site.webmanifest',
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: process.env.NEXT_PUBLIC_BASE_URL,
+    siteName: 'Midnight Spa',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Midnight Spa',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: ['/og-image.jpg'],
+  },
 };
 
 export default function RootLayout({

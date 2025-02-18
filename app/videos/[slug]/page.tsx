@@ -6,6 +6,8 @@ import YouTubeSubscribe from '@/app/components/YouTubeSubscribe';
 import SEO from '@/app/components/SEO';
 import RelatedVideos from '@/app/components/RelatedVideos';
 import prisma from '@/lib/prisma';
+import { generateMetadata } from '@/lib/metadata';
+import type { Metadata } from 'next';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -45,6 +47,45 @@ async function getLatestVideos() {
   });
   return videos;
 }
+
+// Add metadata generation
+export async function generateMetadataForVideo({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const video = await prisma.video.findUnique({
+    where: {
+      slug: params.slug,
+    },
+    select: {
+      title: true,
+      description: true,
+      seoTitle: true,
+      seoDescription: true,
+      seoKeywords: true,
+      youtubeUrl: true,
+    },
+  });
+
+  if (!video) {
+    return generateMetadata({
+      title: 'Video Not Found',
+      description: 'The requested video could not be found.',
+      noIndex: true,
+    });
+  }
+
+  // Extract YouTube video ID for thumbnail
+  const youtubeId = video.youtubeUrl.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/user\/\S+|\/ytscreeningroom\?v=|\/sandalsResorts#\w\/\w\/.*\/))([^\/&\?]{10,12})/)?.[1];
+  const thumbnail = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg` : undefined;
+
+  return generateMetadata({
+    title: video.seoTitle || video.title,
+    description: video.seoDescription || video.description || undefined,
+    keywords: video.seoKeywords || undefined,
+    image: thumbnail,
+    type: 'article',
+  });
+}
+
+export { generateMetadataForVideo as generateMetadata };
 
 export default async function VideoPage({ params }: { params: { slug: string } }) {
   const [video, latestVideos] = await Promise.all([

@@ -3,6 +3,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Poppins } from 'next/font/google';
 import prisma from '@/lib/prisma';
+import { generateMetadata } from '@/lib/metadata';
+import type { Metadata } from 'next';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -35,6 +37,41 @@ interface RelatedPost {
   createdAt: string;
   slug: string;
 }
+
+// Add metadata generation
+export async function generateMetadataForPost({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const post = await prisma.post.findUnique({
+    where: {
+      slug: params.slug,
+    },
+    select: {
+      title: true,
+      excerpt: true,
+      seoTitle: true,
+      seoDescription: true,
+      seoKeywords: true,
+      thumbnail: true,
+    },
+  });
+
+  if (!post) {
+    return generateMetadata({
+      title: 'Post Not Found',
+      description: 'The requested post could not be found.',
+      noIndex: true,
+    });
+  }
+
+  return generateMetadata({
+    title: post.seoTitle || post.title,
+    description: post.seoDescription || post.excerpt || undefined,
+    keywords: post.seoKeywords || undefined,
+    image: post.thumbnail || undefined,
+    type: 'article',
+  });
+}
+
+export { generateMetadataForPost as generateMetadata };
 
 export default async function PostPage({ params }: { params: { slug: string } }) {
   const post = await prisma.post.findUnique({
