@@ -13,15 +13,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const formData = await request.formData();
-    const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
-    const slug = slugify(title);
-    const seoTitle = formData.get('seoTitle') as string;
-    const seoDescription = formData.get('seoDescription') as string;
-    const seoKeywords = formData.get('seoKeywords') as string;
-    const thumbnail = formData.get('thumbnail') as string | null;
-    const categoryId = formData.get('categoryId') as string | null;
+    let title: string;
+    let description: string | null;
+    let slug: string;
+    let seoTitle: string | null;
+    let seoDescription: string | null;
+    let seoKeywords: string | null;
+    let thumbnail: string | null;
+    let categoryId: string | null;
+
+    const contentType = request.headers.get('content-type');
+    
+    if (contentType?.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      title = formData.get('title') as string;
+      description = formData.get('description') as string;
+      slug = formData.get('slug') as string || slugify(title);
+      seoTitle = formData.get('seoTitle') as string;
+      seoDescription = formData.get('seoDescription') as string;
+      seoKeywords = formData.get('seoKeywords') as string;
+      thumbnail = formData.get('thumbnail') as string;
+      categoryId = formData.get('categoryId') as string;
+    } else {
+      const json = await request.json();
+      title = json.title;
+      description = json.description;
+      slug = json.slug || slugify(title);
+      seoTitle = json.seoTitle;
+      seoDescription = json.seoDescription;
+      seoKeywords = json.seoKeywords;
+      thumbnail = json.thumbnail;
+      categoryId = json.categoryId;
+    }
 
     if (!title) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
@@ -44,6 +67,18 @@ export async function POST(request: Request) {
 
     try {
       if (categoryId) {
+        // Verify parent category exists
+        const parentCategory = await prisma.postCategory.findUnique({
+          where: { id: categoryId }
+        });
+
+        if (!parentCategory) {
+          return NextResponse.json(
+            { error: 'Parent category not found' },
+            { status: 404 }
+          );
+        }
+
         // Create subcategory
         const subcategory = await prisma.postSubCategory.create({
           data: {

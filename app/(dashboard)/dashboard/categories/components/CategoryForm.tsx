@@ -102,19 +102,7 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
 
       const response = await fetch(url, {
         method: initialData ? 'PATCH' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: formData.get('title'),
-          slug: formData.get('slug'),
-          description: formData.get('description'),
-          thumbnail: thumbnailPreview,
-          categoryId: formData.get('categoryId') || null,
-          seoTitle: formData.get('seoTitle'),
-          seoDescription: formData.get('seoDescription'),
-          seoKeywords: formData.get('seoKeywords'),
-        }),
+        body: formData,
       });
 
       if (!response.ok) {
@@ -126,7 +114,7 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
       router.refresh();
     } catch (error) {
       console.error('Error saving category:', error);
-      setError(error instanceof Error ? error.message : 'An error occurred');
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
