@@ -5,6 +5,15 @@ import { authOptions } from '../auth/[...nextauth]/auth.config';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { slugify } from '@/lib/utils';
+import { revalidatePath } from 'next/cache';
+
+// Function to revalidate all category-related paths
+const revalidateCategories = () => {
+  revalidatePath('/');
+  revalidatePath('/dashboard/categories');
+  revalidatePath('/[category]', 'layout');
+  revalidatePath('/dashboard/categories/[id]', 'layout');
+};
 
 export async function POST(request: Request) {
   try {
@@ -93,10 +102,8 @@ export async function POST(request: Request) {
           },
         });
 
-        // Revalidate the categories endpoint
-        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/revalidate?path=/api/categories`, {
-          method: 'POST',
-        });
+        // Revalidate all paths that might show categories
+        revalidateCategories();
 
         return NextResponse.json(subcategory);
       } else {
@@ -113,10 +120,8 @@ export async function POST(request: Request) {
           },
         });
 
-        // Revalidate the categories endpoint
-        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/revalidate?path=/api/categories`, {
-          method: 'POST',
-        });
+        // Revalidate all paths that might show categories
+        revalidateCategories();
 
         return NextResponse.json(category);
       }
@@ -160,5 +165,103 @@ export async function GET() {
       { error: 'Internal error' },
       { status: 500 }
     );
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
+
+    const contentType = request.headers.get('content-type');
+    let data;
+    
+    if (contentType?.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      data = {
+        title: formData.get('title') as string,
+        description: formData.get('description') as string || undefined,
+        slug: formData.get('slug') as string || undefined,
+        seoTitle: formData.get('seoTitle') as string || undefined,
+        seoDescription: formData.get('seoDescription') as string || undefined,
+        seoKeywords: formData.get('seoKeywords') as string || undefined,
+        thumbnail: formData.get('thumbnail') as string || undefined,
+      };
+    } else {
+      data = await request.json();
+    }
+
+    // Check if it's a subcategory
+    const subcategory = await prisma.postSubCategory.findUnique({
+      where: { id }
+    });
+
+    if (subcategory) {
+      const updatedSubcategory = await prisma.postSubCategory.update({
+        where: { id },
+        data
+      });
+      revalidateCategories();
+      return NextResponse.json(updatedSubcategory);
+    }
+
+    // If not a subcategory, update the category
+    const updatedCategory = await prisma.postCategory.update({
+      where: { id },
+      data
+    });
+
+    revalidateCategories();
+    return NextResponse.json(updatedCategory);
+  } catch (error) {
+    console.error('[CATEGORIES_PUT]', error);
+    return NextResponse.json({ error: 'Error updating category' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
+
+    // Check if it's a subcategory
+    const subcategory = await prisma.postSubCategory.findUnique({
+      where: { id }
+    });
+
+    if (subcategory) {
+      await prisma.postSubCategory.delete({
+        where: { id }
+      });
+    } else {
+      // If not a subcategory, delete the category
+      await prisma.postCategory.delete({
+        where: { id }
+      });
+    }
+
+    revalidateCategories();
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[CATEGORIES_DELETE]', error);
+    return NextResponse.json({ error: 'Error deleting category' }, { status: 500 });
   }
 } 
