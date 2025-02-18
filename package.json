@@ -12,7 +12,7 @@
     "create-admin": "ts-node --project tsconfig.scripts.json scripts/create-super-admin.ts"
   },
   "dependencies": {
-    "@headlessui/react": "^1.7.17",
+    "@headlessui/react": "^2.2.0",
     "@prisma/client": "^5.7.1",
     "@radix-ui/react-select": "^2.1.6",
     "@swc/helpers": "^0.5.3",
