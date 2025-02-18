@@ -110,6 +110,11 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
         throw new Error(data.error || 'Failed to save category');
       }
 
+      // Force revalidation of the categories page
+      await fetch('/api/revalidate?path=/api/categories', {
+        method: 'POST',
+      });
+
       router.push('/dashboard/categories');
       router.refresh();
     } catch (error) {

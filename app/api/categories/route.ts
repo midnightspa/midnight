@@ -93,6 +93,11 @@ export async function POST(request: Request) {
           },
         });
 
+        // Revalidate the categories endpoint
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/revalidate?path=/api/categories`, {
+          method: 'POST',
+        });
+
         return NextResponse.json(subcategory);
       } else {
         // Create category
@@ -106,6 +111,11 @@ export async function POST(request: Request) {
             seoDescription: seoDescription || undefined,
             seoKeywords: seoKeywords || undefined,
           },
+        });
+
+        // Revalidate the categories endpoint
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/revalidate?path=/api/categories`, {
+          method: 'POST',
         });
 
         return NextResponse.json(category);
@@ -134,7 +144,16 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(categories);
+    // Set cache control headers
+    return NextResponse.json(
+      categories,
+      {
+        headers: {
+          'Cache-Control': 'no-store',
+          'Surrogate-Control': 'no-store',
+        },
+      }
+    );
   } catch (error) {
     console.error('[CATEGORIES_GET]', error);
     return NextResponse.json(
