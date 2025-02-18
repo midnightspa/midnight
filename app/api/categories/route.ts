@@ -6,6 +6,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { slugify } from '@/lib/utils';
 import { revalidatePath } from 'next/cache';
+import { Buffer } from 'node:buffer';
 
 // Function to revalidate all category-related paths
 const revalidateCategories = () => {
