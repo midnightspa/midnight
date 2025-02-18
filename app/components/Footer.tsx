@@ -92,7 +92,7 @@ export default function Footer() {
   return (
     <>
      {/* Newsletter Section */}
-     <section className="py-20 bg-neutral-50">
+     <section className="py-12 md:py-20 bg-neutral-50">
      <div className="container mx-auto px-4 max-w-4xl text-center">
        <span className="text-sm font-medium text-neutral-500 uppercase tracking-wider">Newsletter</span>
        <h2 className="text-3xl font-semibold text-neutral-900 mt-1 mb-4">Stay Updated</h2>
@@ -100,7 +100,7 @@ export default function Footer() {
          Subscribe to our newsletter to receive the latest updates and exclusive content.
        </p>
        <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md mx-auto">
-         <div className="flex gap-4">
+         <div className="flex flex-col sm:flex-row gap-4">
            <input
              type="email"
              value={email}
@@ -112,7 +112,7 @@ export default function Footer() {
            <button
              type="submit"
              disabled={status === 'loading'}
-             className="px-6 py-3 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+             className="px-6 py-3 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
            >
              {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
            </button>
@@ -122,7 +122,7 @@ export default function Footer() {
              {message}
            </p>
          )}
-         <p className="mt-4 text-sm text-neutral-500">
+         <p className="mt-2 text-sm text-neutral-500 px-4">
            We respect your privacy. Unsubscribe at any time.
          </p>
        </form>
