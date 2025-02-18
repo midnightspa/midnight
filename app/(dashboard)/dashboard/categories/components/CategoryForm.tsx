@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { slugify } from '@/lib/utils';
+import Image from 'next/image';
 
 interface Category {
   id: string;
@@ -28,6 +29,7 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(
     initialData?.thumbnail || null
   );
@@ -53,9 +55,10 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
     fetchCategories();
   }, [initialData]);
 
-  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleThumbnailChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setThumbnailFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setThumbnailPreview(reader.result as string);
@@ -81,10 +84,7 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
       const form = e.currentTarget;
       const formData = new FormData(form);
       
-      // Get the thumbnail file from the input
-      const thumbnailInput = form.querySelector('input[type="file"]') as HTMLInputElement;
-      const thumbnailFile = thumbnailInput?.files?.[0];
-      
+      // Handle thumbnail upload
       if (thumbnailFile) {
         formData.set('thumbnail', thumbnailFile);
       } else if (initialData?.thumbnail) {
@@ -202,11 +202,14 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
         <label className="block text-sm font-medium text-gray-700">Thumbnail</label>
         <div className="mt-1 flex items-center">
           {thumbnailPreview && (
-            <img
-              src={thumbnailPreview}
-              alt="Thumbnail preview"
-              className="h-32 w-32 object-cover rounded-lg"
-            />
+            <div className="relative h-32 w-32">
+              <Image
+                src={thumbnailPreview}
+                alt="Thumbnail preview"
+                fill
+                className="object-cover rounded-lg"
+              />
+            </div>
           )}
           <label className="ml-5 cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
             <span>Upload thumbnail</span>
