@@ -53,25 +53,14 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
     fetchCategories();
   }, [initialData]);
 
-  const handleThumbnailChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('thumbnail', file);
-
-    try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error('Upload failed');
-
-      const data = await response.json();
-      setThumbnailPreview(data.url);
-    } catch (error) {
-      console.error('Error uploading thumbnail:', error);
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setThumbnailPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -89,11 +78,17 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
     setError(null);
 
     try {
-      const formData = new FormData(e.currentTarget);
+      const form = e.currentTarget;
+      const formData = new FormData(form);
       
-      // Add the thumbnail URL if it exists
-      if (thumbnailPreview) {
-        formData.set('thumbnail', thumbnailPreview);
+      // Get the thumbnail file from the input
+      const thumbnailInput = form.querySelector('input[type="file"]') as HTMLInputElement;
+      const thumbnailFile = thumbnailInput?.files?.[0];
+      
+      if (thumbnailFile) {
+        formData.set('thumbnail', thumbnailFile);
+      } else if (initialData?.thumbnail) {
+        formData.set('thumbnail', initialData.thumbnail);
       }
 
       const url = initialData
@@ -103,9 +98,6 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
       const response = await fetch(url, {
         method: initialData ? 'PUT' : 'POST',
         body: formData,
-        headers: {
-          'Accept': 'application/json',
-        },
       });
 
       if (!response.ok) {

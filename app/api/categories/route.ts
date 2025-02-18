@@ -29,11 +29,38 @@ export async function POST(request: Request) {
     const seoTitle = formData.get('seoTitle') as string;
     const seoDescription = formData.get('seoDescription') as string;
     const seoKeywords = formData.get('seoKeywords') as string;
-    const thumbnail = formData.get('thumbnail') as string;
+    const thumbnailFile = formData.get('thumbnail') as File;
     const categoryId = formData.get('categoryId') as string;
 
     if (!title) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    }
+
+    let thumbnail = undefined;
+    if (thumbnailFile && thumbnailFile instanceof File) {
+      // Create uploads directory if it doesn't exist
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+      try {
+        await mkdir(uploadDir, { recursive: true });
+      } catch (error) {
+        // Directory might already exist, ignore error
+      }
+
+      // Create unique filename
+      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+      const filename = `${slug}-${uniqueSuffix}${path.extname(thumbnailFile.name)}`;
+      const filepath = path.join(uploadDir, filename);
+
+      // Write the file
+      const bytes = await thumbnailFile.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      await writeFile(filepath, buffer);
+
+      // Set the thumbnail URL
+      thumbnail = `/uploads/${filename}`;
+    } else if (thumbnailFile && typeof thumbnailFile === 'string') {
+      // If thumbnail is a string (URL), use it directly
+      thumbnail = thumbnailFile;
     }
 
     // Check if slug already exists
@@ -159,23 +186,53 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
-    const contentType = request.headers.get('content-type');
-    let data;
-    
-    if (contentType?.includes('multipart/form-data')) {
-      const formData = await request.formData();
-      data = {
-        title: formData.get('title') as string,
-        description: formData.get('description') as string || undefined,
-        slug: formData.get('slug') as string || undefined,
-        seoTitle: formData.get('seoTitle') as string || undefined,
-        seoDescription: formData.get('seoDescription') as string || undefined,
-        seoKeywords: formData.get('seoKeywords') as string || undefined,
-        thumbnail: formData.get('thumbnail') as string || undefined,
-      };
-    } else {
-      data = await request.json();
+    const formData = await request.formData();
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+    const slug = formData.get('slug') as string;
+    const seoTitle = formData.get('seoTitle') as string;
+    const seoDescription = formData.get('seoDescription') as string;
+    const seoKeywords = formData.get('seoKeywords') as string;
+    const thumbnailFile = formData.get('thumbnail') as File | string;
+
+    let thumbnail = undefined;
+    if (thumbnailFile) {
+      if (thumbnailFile instanceof File) {
+        // Create uploads directory if it doesn't exist
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+        try {
+          await mkdir(uploadDir, { recursive: true });
+        } catch (error) {
+          // Directory might already exist, ignore error
+        }
+
+        // Create unique filename
+        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+        const filename = `${slug}-${uniqueSuffix}${path.extname(thumbnailFile.name)}`;
+        const filepath = path.join(uploadDir, filename);
+
+        // Write the file
+        const bytes = await thumbnailFile.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        await writeFile(filepath, buffer);
+
+        // Set the thumbnail URL
+        thumbnail = `/uploads/${filename}`;
+      } else if (typeof thumbnailFile === 'string') {
+        // If thumbnail is a string (URL), use it directly
+        thumbnail = thumbnailFile;
+      }
     }
+
+    const data = {
+      title,
+      description: description || undefined,
+      slug: slug || undefined,
+      seoTitle: seoTitle || undefined,
+      seoDescription: seoDescription || undefined,
+      seoKeywords: seoKeywords || undefined,
+      ...(thumbnail && { thumbnail }),
+    };
 
     // Check if it's a subcategory
     const subcategory = await prisma.postSubCategory.findUnique({
