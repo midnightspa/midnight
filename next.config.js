@@ -30,7 +30,9 @@ const nextConfig = {
   },
   serverExternalPackages: ['punycode'],
   experimental: {
-    serverActions: true,
+    serverActions: {
+      allowedOrigins: ['localhost:3000', 'themidnightspa.com', '5.161.86.130']
+    },
   },
   headers: async () => {
     return [
