@@ -6,17 +6,25 @@ import { mkdir } from 'fs/promises';
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
-    const file = formData.get('file') as File;
+    const file = formData.get('thumbnail') as File;
     
     if (!file) {
+      console.error('No file received in request');
       return NextResponse.json(
         { error: 'No file uploaded' },
         { status: 400 }
       );
     }
 
+    console.log('Received file:', {
+      name: file.name,
+      type: file.type,
+      size: file.size
+    });
+
     // Validate file size (10MB limit)
     if (file.size > 10 * 1024 * 1024) {
+      console.error('File size too large:', file.size);
       return NextResponse.json(
         { error: 'File size exceeds 10MB limit' },
         { status: 400 }
@@ -26,6 +34,7 @@ export async function POST(request: Request) {
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!allowedTypes.includes(file.type)) {
+      console.error('Invalid file type:', file.type);
       return NextResponse.json(
         { error: 'Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed.' },
         { status: 400 }
@@ -45,19 +54,28 @@ export async function POST(request: Request) {
     const filename = `${uniqueSuffix}.${extension}`;
     const filepath = join(uploadDir, filename);
 
+    console.log('Writing file to:', filepath);
+
     // Write the file
     await writeFile(filepath, buffer);
+    console.log('File written successfully');
 
     // Return the public URL
+    const url = `/uploads/${filename}`;
+    console.log('Returning URL:', url);
+
     return NextResponse.json({ 
       success: true,
-      url: `/uploads/${filename}` 
+      url: url
     });
     
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json(
-      { error: 'Failed to upload file' },
+      { 
+        error: 'Failed to upload file',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
@@ -66,6 +84,5 @@ export async function POST(request: Request) {
 export const config = {
   api: {
     bodyParser: false,
-    sizeLimit: '10mb',
   },
 }; 

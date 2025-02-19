@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Editor from '@/app/components/Editor';
+import { toast } from 'sonner';
 
 interface Category {
   id: string;
@@ -83,14 +84,49 @@ export default function PostForm() {
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setThumbnailPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Show preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setThumbnailPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+
+        // Upload file
+        const formData = new FormData();
+        formData.append('thumbnail', file);
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to upload thumbnail');
+        }
+
+        const data = await response.json();
+        if (!data.success || !data.url) {
+          throw new Error('Failed to get upload URL');
+        }
+
+        // Set the thumbnail URL in a hidden input
+        const thumbnailInput = document.querySelector('input[name="thumbnail"]') as HTMLInputElement;
+        if (thumbnailInput) {
+          thumbnailInput.value = data.url;
+        }
+
+      } catch (error) {
+        console.error('Error uploading thumbnail:', error);
+        toast.error('Failed to upload thumbnail', {
+          description: error instanceof Error ? error.message : 'Unknown error',
+          duration: 3000,
+        });
+      }
     }
   };
 
