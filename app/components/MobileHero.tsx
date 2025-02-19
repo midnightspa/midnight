@@ -1,6 +1,6 @@
 import React from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
+import ImageWithFallback from './ImageWithFallback';
 
 const DEFAULT_THUMBNAIL = '/placeholder.jpg';
 
@@ -54,7 +54,7 @@ const MobileHero: React.FC<MobileHeroProps> = ({ posts }) => {
               >
                 <div className="h-full bg-white rounded-2xl overflow-hidden shadow-lg transform transition hover:scale-95 active:scale-90">
                   <div className="relative h-32">
-                    <Image
+                    <ImageWithFallback
                       src={getImageUrl(post.thumbnail)}
                       alt={post.title}
                       fill
@@ -62,9 +62,6 @@ const MobileHero: React.FC<MobileHeroProps> = ({ posts }) => {
                       placeholder="blur"
                       blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzAwIiBoZWlnaHQ9IjQ3NSIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciPjxzdG9wIHN0b3AtY29sb3I9IiNmNmY3ZjgiIG9mZnNldD0iMjAlIiAvPjxzdG9wIHN0b3AtY29sb3I9IiNlZGVlZjEiIG9mZnNldD0iNTAlIiAvPjxzdG9wIHN0b3AtY29sb3I9IiNmNmY3ZjgiIG9mZnNldD0iNzAlIiAvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSI3MDAiIGhlaWdodD0iNDc1IiBmaWxsPSIjZjZmN2Y4IiAvPjxyZWN0IGlkPSJyIiB3aWR0aD0iNzAwIiBoZWlnaHQ9IjQ3NSIgZmlsbD0idXJsKCNnKSIgLz48YW5pbWF0ZSB4bGluazpocmVmPSIjciIgYXR0cmlidXRlTmFtZT0ieCIgZnJvbT0iLTcwMCIgdG89IjcwMCIgZHVyPSIxcyIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiICAvPjwvc3ZnPg=="
                       priority={index < 2}
-                      onError={(e: any) => {
-                        e.target.src = DEFAULT_THUMBNAIL;
-                      }}
                     />
                     {post.category && (
                       <span className="absolute top-2 left-2 px-3 py-1 bg-white/90 backdrop-blur-sm text-neutral-900 text-xs font-medium rounded-full">

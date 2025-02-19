@@ -1,11 +1,11 @@
 import React from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { Poppins } from 'next/font/google';
 import SubCatCarousel from '@/components/SubCatCarousel';
 import { PrismaClient } from '@prisma/client';
 import { generateMetadata as generateSiteMetadata, generateStructuredData, getSiteSettings } from '@/lib/seo';
 import MobileHero from '@/app/components/MobileHero';
+import ImageWithFallback from '@/app/components/ImageWithFallback';
 
 const prisma = new PrismaClient();
 
@@ -246,7 +246,7 @@ export default async function HomePage() {
                         >
                           <div className="bg-white rounded-xl overflow-hidden shadow-lg w-[380px] hover:shadow-xl transition-shadow duration-300">
                             <div className="relative h-40">
-                              <Image
+                              <ImageWithFallback
                                 src={getImageUrl(post.thumbnail)}
                                 alt={post.title}
                                 fill
@@ -255,9 +255,6 @@ export default async function HomePage() {
                                 placeholder="blur"
                                 blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
                                 priority={index < 2}
-                                onError={(e: any) => {
-                                  e.target.src = DEFAULT_THUMBNAIL;
-                                }}
                               />
                               {post.category && (
                                 <span className="absolute top-4 left-4 px-3 py-1 bg-white/90 backdrop-blur-sm text-neutral-900 text-sm font-medium rounded-full">
@@ -313,7 +310,7 @@ export default async function HomePage() {
                     className="group bg-neutral-50 rounded-xl p-6 hover:bg-neutral-100 transition-all duration-300 border border-neutral-100"
                   >
                     <div className="h-48 relative mb-4 rounded-lg overflow-hidden">
-                      <Image
+                      <ImageWithFallback
                         src={getImageUrl(category.thumbnail)}
                         alt={category.title}
                         fill
@@ -321,9 +318,6 @@ export default async function HomePage() {
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                         placeholder="blur"
                         blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
-                        onError={(e: any) => {
-                          e.target.src = DEFAULT_THUMBNAIL;
-                        }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </div>
@@ -373,7 +367,7 @@ export default async function HomePage() {
                     >
                       <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300">
                         <div className="aspect-video relative">
-                          <Image
+                          <ImageWithFallback
                             src={getYouTubeThumbnail(video.youtubeUrl)}
                             alt={video.title}
                             fill
@@ -432,14 +426,14 @@ export default async function HomePage() {
                 {/* Main Content Area (9 columns) */}
                 <div className="col-span-12 lg:col-span-9">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {posts.map((post) => (
+                    {posts.map((post, index) => (
                       <div
                         key={post.id}
                         className="bg-white rounded-xl overflow-hidden shadow hover:shadow-lg transition-all duration-300"
                       >
                         <Link href={`/posts/${post.slug}`} className="block">
                           <div className="relative h-48">
-                            <Image
+                            <ImageWithFallback
                               src={getImageUrl(post.thumbnail)}
                               alt={post.title}
                               fill
@@ -448,9 +442,6 @@ export default async function HomePage() {
                               placeholder="blur"
                               blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
                               priority={index < 2}
-                              onError={(e: any) => {
-                                e.target.src = DEFAULT_THUMBNAIL;
-                              }}
                             />
                           </div>
                           <div className="p-6">
@@ -507,7 +498,7 @@ export default async function HomePage() {
                       {posts.slice(0, 3).map((post) => (
                         <Link key={post.id} href={`/posts/${post.id}`} className="flex gap-4 group">
                           <div className="w-20 h-20 relative rounded-lg overflow-hidden flex-shrink-0">
-                            <Image
+                            <ImageWithFallback
                               src={getImageUrl(post.thumbnail)}
                               alt={post.title}
                               fill
@@ -516,9 +507,6 @@ export default async function HomePage() {
                               placeholder="blur"
                               blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
                               loading="lazy"
-                              onError={(e: any) => {
-                                e.target.src = DEFAULT_THUMBNAIL;
-                              }}
                             />
                           </div>
                           <div>
