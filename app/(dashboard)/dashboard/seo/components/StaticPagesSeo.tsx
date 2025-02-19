@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -119,17 +119,6 @@ export default function StaticPagesSeo() {
       <CardContent>
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <TabsList>
-              {STATIC_PAGES.map(page => (
-                <TabsTrigger
-                  key={page.path}
-                  value={page.path}
-                  onClick={() => setSelectedPage(page.path)}
-                >
-                  {page.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
             <Button onClick={saveSettings} disabled={loading}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               Save Changes
@@ -151,6 +140,17 @@ export default function StaticPagesSeo() {
           )}
 
           <Tabs value={selectedPage} className="space-y-4">
+            <TabsList className="flex-wrap">
+              {STATIC_PAGES.map(page => (
+                <TabsTrigger
+                  key={page.path}
+                  value={page.path}
+                  onClick={() => setSelectedPage(page.path)}
+                >
+                  {page.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
             {STATIC_PAGES.map(page => (
               <TabsContent key={page.path} value={page.path}>
                 <div className="grid gap-4">
@@ -167,7 +167,7 @@ export default function StaticPagesSeo() {
                     <label className="text-sm font-medium">Meta Description</label>
                     <Textarea
                       value={currentSettings.description}
-                      onChange={e => updateSettings(page.path, 'description', e.target.value)}
+                      onChange={(e: ChangeEvent<HTMLTextAreaElement>) => updateSettings(page.path, 'description', e.target.value)}
                       placeholder="Enter meta description"
                     />
                   </div>
@@ -199,7 +199,7 @@ export default function StaticPagesSeo() {
                           <label className="text-sm font-medium">OG Description</label>
                           <Textarea
                             value={currentSettings.ogDescription}
-                            onChange={e => updateSettings(page.path, 'ogDescription', e.target.value)}
+                            onChange={(e: ChangeEvent<HTMLTextAreaElement>) => updateSettings(page.path, 'ogDescription', e.target.value)}
                             placeholder="Enter Open Graph description"
                           />
                         </div>
@@ -231,7 +231,7 @@ export default function StaticPagesSeo() {
                           <label className="text-sm font-medium">Twitter Description</label>
                           <Textarea
                             value={currentSettings.twitterDescription}
-                            onChange={e => updateSettings(page.path, 'twitterDescription', e.target.value)}
+                            onChange={(e: ChangeEvent<HTMLTextAreaElement>) => updateSettings(page.path, 'twitterDescription', e.target.value)}
                             placeholder="Enter Twitter description"
                           />
                         </div>
