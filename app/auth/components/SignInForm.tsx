@@ -18,14 +18,17 @@ export default function SignInForm() {
     const password = formData.get('password') as string;
 
     try {
+      console.log('Attempting sign in...'); // Debug log
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
-        callbackUrl: '/dashboard'
       });
 
+      console.log('Sign in result:', result); // Debug log
+
       if (result?.error) {
+        console.error('Sign in error:', result.error); // Debug log
         toast.error('Invalid email or password', {
           description: 'Please check your credentials and try again.',
           duration: 3000,
@@ -35,13 +38,13 @@ export default function SignInForm() {
           description: 'Welcome back!',
           duration: 3000,
         });
-        // Wait a bit for the session to be fully established
-        setTimeout(() => {
-          router.push('/dashboard');
-          router.refresh();
-        }, 100);
+        
+        console.log('Redirecting to dashboard...'); // Debug log
+        // Force a hard navigation to the dashboard
+        window.location.href = '/dashboard';
       }
     } catch (error) {
+      console.error('Sign in exception:', error); // Debug log
       toast.error('An error occurred', {
         description: 'Please try again later.',
         duration: 3000,

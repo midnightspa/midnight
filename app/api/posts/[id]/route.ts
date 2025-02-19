@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/auth.config';
 import { writeFile } from 'fs/promises';
 import path from 'path';
+import { submitUrlToIndex } from '@/lib/google-indexing';
 
 export async function GET(
   request: Request,
@@ -21,6 +22,7 @@ export async function GET(
         excerpt: true,
         thumbnail: true,
         createdAt: true,
+        published: true,
         tags: true,
         category: {
           select: {
@@ -66,15 +68,25 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check content type to determine how to parse the request
+    // Get the current post
+    const currentPost = await prisma.post.findUnique({
+      where: { id: params.id },
+      select: { published: true, slug: true }
+    });
+
+    if (!currentPost) {
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 });
+    }
+
+    // Parse the request body
     const contentType = request.headers.get('content-type') || '';
     let data: any = {};
     
-    if (contentType.includes('multipart/form-data')) {
+    if (contentType.includes('application/json')) {
+      data = await request.json();
+    } else if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
-      // Convert FormData to object
       formData.forEach((value, key) => {
-        // Handle special cases for boolean values
         if (key === 'published') {
           data[key] = value === 'true';
         } else if (key === 'tags') {
@@ -83,95 +95,39 @@ export async function PATCH(
           data[key] = value;
         }
       });
-    } else {
-      // Assume JSON
-      data = await request.json();
     }
 
-    // If we're only updating the published status
-    if (Object.keys(data).length === 1 && 'published' in data) {
-      const post = await prisma.post.update({
-        where: { id: params.id },
-        data: { published: data.published }
-      });
-      return NextResponse.json(post);
-    }
-
-    // Handle full post update
-    const {
-      title,
-      content,
-      categoryId,
-      excerpt,
-      subcategoryId,
-      tags,
-      seoTitle,
-      seoDescription,
-      seoKeywords,
-      published,
-      thumbnailFile
-    } = data;
-
-    // Validate required fields for full update
-    if (title && !content || !categoryId) {
-      return NextResponse.json(
-        { error: 'Title, content, and category are required for full update' },
-        { status: 400 }
-      );
-    }
-
-    // Create slug from title if title is provided
-    const slug = title ? title.toLowerCase().replace(/[^a-z0-9]+/g, '-') : undefined;
-
-    let thumbnail = undefined;
-    if (thumbnailFile) {
-      // Create uploads directory if it doesn't exist
-      const uploadsDir = path.join(process.cwd(), 'public/uploads');
-      try {
-        await writeFile(path.join(uploadsDir, 'test.txt'), '');
-      } catch (error) {
-        // Directory doesn't exist, create it
-        const { mkdir } = require('fs/promises');
-        await mkdir(uploadsDir, { recursive: true });
-      }
-
-      // Generate unique filename
-      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-      const filename = `${slug}-${uniqueSuffix}${path.extname(thumbnailFile.name)}`;
-      
-      // Convert File to Buffer
-      const bytes = await thumbnailFile.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-
-      // Save the file
-      const filepath = path.join(uploadsDir, filename);
-      await writeFile(filepath, buffer);
-      
-      // Set the thumbnail URL
-      thumbnail = `/uploads/${filename}`;
-    }
-
-    const post = await prisma.post.update({
-      where: {
-        id: params.id,
-      },
+    // Update the post
+    const updatedPost = await prisma.post.update({
+      where: { id: params.id },
       data: {
-        ...(title && { title }),
-        ...(slug && { slug }),
-        ...(excerpt && { excerpt }),
-        ...(content && { content }),
-        ...(categoryId && { categoryId }),
-        subcategoryId: subcategoryId || undefined,
-        ...(Array.isArray(tags) && { tags }),
-        ...(seoTitle && { seoTitle }),
-        ...(seoDescription && { seoDescription }),
-        ...(seoKeywords && { seoKeywords }),
-        ...(typeof published === 'boolean' && { published }),
-        ...(thumbnail && { thumbnail }),
-      },
+        ...data,
+        published: typeof data.published === 'boolean' ? data.published : currentPost.published
+      }
     });
 
-    return NextResponse.json(post);
+    // If publish status changed and the post is now published, submit to Google indexing
+    if (data.published === true && !currentPost.published) {
+      try {
+        const url = `https://themidnightspa.com/posts/${currentPost.slug}`;
+        await submitUrlToIndex(url);
+        
+        // Log the indexing request
+        await prisma.seoIndexingLog.create({
+          data: {
+            urls: [url],
+            type: 'URL_UPDATED',
+            results: { status: 'submitted' },
+            userId: session.user.id,
+          },
+        });
+      } catch (indexError) {
+        console.error('Error submitting to Google indexing:', indexError);
+        // Don't throw the error as the post update was successful
+      }
+    }
+
+    return NextResponse.json(updatedPost);
   } catch (error) {
     console.error('Error updating post:', error);
     return NextResponse.json(

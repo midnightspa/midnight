@@ -1,5 +1,5 @@
-const { hash } = require('bcryptjs');
-const prisma = require('../lib/prisma').default;
+import { hash } from 'bcryptjs';
+import prisma from '../lib/prisma';
 
 async function updateAdminPassword() {
   try {
@@ -10,7 +10,9 @@ async function updateAdminPassword() {
         email: 'mounir@clicksalesmedia.com'
       },
       data: {
-        password: hashedPassword
+        password: hashedPassword,
+        isApproved: true,
+        role: 'SUPER_ADMIN'
       }
     });
 

@@ -18,6 +18,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.log('Missing credentials');
           throw new Error('Please enter an email and password');
         }
 
@@ -35,15 +36,20 @@ export const authOptions: NextAuthOptions = {
           }
         });
 
+        console.log('Found user:', user ? { ...user, password: '[REDACTED]' } : null);
+
         if (!user) {
+          console.log('No user found');
           throw new Error('No user found with that email');
         }
 
         if (!user.isApproved && user.role !== Role.SUPER_ADMIN) {
+          console.log('User not approved');
           throw new Error('Your account is pending approval');
         }
 
         const passwordMatch = await compare(credentials.password, user.password);
+        console.log('Password match:', passwordMatch);
 
         if (!passwordMatch) {
           throw new Error('Incorrect password');
@@ -62,15 +68,12 @@ export const authOptions: NextAuthOptions = {
     signIn: '/auth/signin',
     error: '/auth/signin',
   },
+  debug: process.env.NODE_ENV === 'development',
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   secret: process.env.NEXTAUTH_SECRET,
-  jwt: {
-    secret: process.env.NEXTAUTH_SECRET,
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -85,18 +88,6 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as string;
       }
       return session;
-    },
-    async redirect({ url, baseUrl }) {
-      // Always redirect to dashboard after sign in
-      if (url.includes('/auth/signin')) {
-        return `${baseUrl}/dashboard`;
-      }
-      // If trying to access a protected page
-      if (url.startsWith(baseUrl)) {
-        return url;
-      }
-      // Default fallback
-      return baseUrl;
     },
   },
 }; 

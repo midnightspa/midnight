@@ -161,6 +161,7 @@ export async function GET(request: Request) {
         excerpt: true,
         thumbnail: true,
         createdAt: true,
+        published: true,
         slug: true,
         tags: true,
         author: {

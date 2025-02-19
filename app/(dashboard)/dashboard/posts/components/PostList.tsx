@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface Post {
   id: string;
@@ -21,13 +22,11 @@ export default function PostList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
   const fetchPosts = async () => {
     try {
-      const response = await fetch('/api/posts');
+      const response = await fetch('/api/posts', {
+        cache: 'no-store'
+      });
       if (!response.ok) throw new Error('Failed to fetch posts');
       const data = await response.json();
       setPosts(data);
@@ -37,6 +36,10 @@ export default function PostList() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
 
   const handleDelete = async (postId: string) => {
     if (!confirm('Are you sure you want to delete this post?')) return;
@@ -48,32 +51,41 @@ export default function PostList() {
 
       if (!response.ok) throw new Error('Failed to delete post');
       
-      // Remove the deleted post from the state
       setPosts(posts.filter(post => post.id !== postId));
+      toast.success('Post deleted successfully');
     } catch (err) {
+      toast.error('Failed to delete post');
       setError(err instanceof Error ? err.message : 'Failed to delete post');
     }
   };
 
   const handlePublishToggle = async (postId: string, currentStatus: boolean) => {
     try {
-      const formData = new FormData();
-      formData.append('published', (!currentStatus).toString());
-
       const response = await fetch(`/api/posts/${postId}`, {
         method: 'PATCH',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          published: !currentStatus
+        }),
       });
 
       if (!response.ok) throw new Error('Failed to update post status');
 
-      // Update the post status in the state
+      const updatedPost = await response.json();
+      
+      // Update the posts state with the new data
       setPosts(posts.map(post => 
-        post.id === postId 
-          ? { ...post, published: !post.published }
-          : post
+        post.id === postId ? { ...post, published: updatedPost.published } : post
       ));
+
+      toast.success(`Post ${!currentStatus ? 'published' : 'unpublished'} successfully`);
+      
+      // Fetch fresh data after update
+      fetchPosts();
     } catch (err) {
+      toast.error('Failed to update post status');
       setError(err instanceof Error ? err.message : 'Failed to update post status');
     }
   };
