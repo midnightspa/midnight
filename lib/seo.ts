@@ -1,61 +1,76 @@
-import prisma from './prisma';
+import { Metadata } from 'next';
 
 export async function getSiteSettings() {
-  const settings = await prisma.siteSettings.findFirst();
-  return settings;
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/settings`, {
+      next: { revalidate: 3600 },
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch site settings');
+    }
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching site settings:', error);
+    return null;
+  }
 }
 
-export async function generateMetadata(pageTitle?: string, pageDescription?: string, pageImage?: string) {
-  const settings = await getSiteSettings();
-  
+export function generateStructuredData(settings: any) {
   return {
-    title: pageTitle ? `${pageTitle} | ${settings?.siteName || 'Midnight Spa'}` : settings?.siteTitle || 'Midnight Spa',
-    description: pageDescription || settings?.siteDescription || 'Your ultimate destination for relaxation and wellness',
-    keywords: settings?.siteKeywords,
-    openGraph: {
-      title: pageTitle || settings?.ogTitle || 'Midnight Spa',
-      description: pageDescription || settings?.ogDescription || 'Your ultimate destination for relaxation and wellness',
-      images: [pageImage || settings?.ogImage || '/images/default-og.jpg'],
-      siteName: settings?.siteName || 'Midnight Spa',
-    },
-    twitter: {
-      card: settings?.twitterCardType || 'summary_large_image',
-      site: settings?.twitterHandle,
-    },
-    icons: {
-      icon: settings?.favicon || '/favicon.ico',
-    },
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: settings?.siteName || '',
+    description: settings?.siteDescription || '',
+    url: process.env.NEXT_PUBLIC_BASE_URL,
+    logo: `${process.env.NEXT_PUBLIC_BASE_URL}/logo.png`,
   };
 }
 
-interface SiteSettings {
-  organizationName?: string;
-  organizationLogo?: string;
-  contactPhone?: string;
-  contactEmail?: string;
-  contactAddress?: string;
-}
-
-export function generateStructuredData(settings: SiteSettings | null) {
-  // Return a minimal structured data if settings is null
-  if (!settings) {
-    return {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Midnight Spa",
-    };
-  }
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
 
   return {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": settings.organizationName || "Midnight Spa",
-    "logo": settings.organizationLogo || "/logo.png",
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "telephone": settings.contactPhone || "",
-      "email": settings.contactEmail || "",
-      "address": settings.contactAddress || ""
-    }
+    title: {
+      default: settings?.siteName || '',
+      template: `%s | ${settings?.siteName || ''}`,
+    },
+    description: settings?.siteDescription || '',
+    keywords: settings?.siteKeywords?.split(',').map((keyword: string) => keyword.trim()) || [],
+    metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || ''),
+    openGraph: {
+      title: settings?.siteName || '',
+      description: settings?.siteDescription || '',
+      url: process.env.NEXT_PUBLIC_BASE_URL,
+      siteName: settings?.siteName || '',
+      images: [
+        {
+          url: `${process.env.NEXT_PUBLIC_BASE_URL}/logo.png`,
+          width: 1200,
+          height: 630,
+        },
+      ],
+      locale: 'en_US',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: settings?.siteName || '',
+      description: settings?.siteDescription || '',
+      images: [`${process.env.NEXT_PUBLIC_BASE_URL}/logo.png`],
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+    verification: {
+      google: settings?.googleSiteVerification || '',
+    },
   };
 } 
