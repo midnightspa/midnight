@@ -8,10 +8,12 @@ const PUBLIC_API_ROUTES = [
   '/api/categories',
   '/api/posts',
   '/api/subcategories',
-  '/api/auth/[...nextauth]',
+  '/api/auth',
   '/api/v1/categories',
   '/api/v1/subcategories',
-  '/api/v1/posts'
+  '/api/v1/posts',
+  '/api/sitemap',
+  '/api/search'
 ];
 
 // List of protected API endpoints that require authentication
@@ -27,17 +29,21 @@ const PROTECTED_API_ROUTES = [
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
-  // Apply rate limiting to all API routes
-  if (path.startsWith('/api/')) {
-    const isAllowed = await rateLimit(request);
-    if (!isAllowed) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Too many requests' }),
-        {
-          status: 429,
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
+  // Check if the path is a public API route
+  const isPublicApiRoute = PUBLIC_API_ROUTES.some(route => 
+    path.startsWith(route) || path === route
+  );
+
+  // Allow public routes without any checks
+  if (isPublicApiRoute) {
+    return NextResponse.next();
+  }
+
+  // Check if it's a dashboard route
+  if (path.startsWith('/dashboard')) {
+    const token = await getToken({ req: request as any });
+    if (!token) {
+      return NextResponse.redirect(new URL('/auth/signin', request.url));
     }
   }
 
@@ -46,22 +52,33 @@ export async function middleware(request: NextRequest) {
     path.startsWith(route) || path === route
   );
 
-  // If it's not a protected route, allow the request
-  if (!isProtectedApiRoute) {
-    return NextResponse.next();
-  }
-
-  // For protected routes, verify authentication
-  const token = await getToken({ req: request as any });
-  
-  if (!token) {
-    return new NextResponse(
-      JSON.stringify({ error: 'Authentication required' }),
-      {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
+  // Apply rate limiting and auth check only to protected routes
+  if (isProtectedApiRoute) {
+    try {
+      const isAllowed = await rateLimit(request);
+      if (!isAllowed) {
+        return new NextResponse(
+          JSON.stringify({ error: 'Too many requests' }),
+          {
+            status: 429,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
       }
-    );
+    } catch (error) {
+      console.error('Rate limiting error:', error);
+    }
+
+    const token = await getToken({ req: request as any });
+    if (!token) {
+      return new NextResponse(
+        JSON.stringify({ error: 'Authentication required' }),
+        {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
   }
 
   return NextResponse.next();
