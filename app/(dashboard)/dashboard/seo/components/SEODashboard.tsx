@@ -5,9 +5,16 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 interface SeoSettings {
-  metaTitle: string;
-  metaDescription: string;
+  path: string;
+  title: string;
+  description: string;
   keywords: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  twitterImage?: string;
 }
 
 export function SEODashboard() {
@@ -16,8 +23,9 @@ export function SEODashboard() {
   const [error, setError] = useState<string | null>(null);
   const [selectedPage, setSelectedPage] = useState('/');
   const [currentSettings, setCurrentSettings] = useState<SeoSettings>({
-    metaTitle: '',
-    metaDescription: '',
+    path: '/',
+    title: '',
+    description: '',
     keywords: '',
   });
 
@@ -28,10 +36,14 @@ export function SEODashboard() {
   const loadSettings = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/seo');
+      const response = await fetch('/api/seo/static-pages');
       if (!response.ok) throw new Error('Failed to load SEO settings');
       const data = await response.json();
       setSettings(data);
+      if (data.length > 0) {
+        const homePage = data.find((s: SeoSettings) => s.path === '/') || data[0];
+        setCurrentSettings(homePage);
+      }
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -42,9 +54,10 @@ export function SEODashboard() {
   };
 
   const handlePageSelect = (path: string) => {
-    const pageSettings = settings.find(s => s.metaTitle === path) || {
-      metaTitle: path,
-      metaDescription: '',
+    const pageSettings = settings.find(s => s.path === path) || {
+      path,
+      title: '',
+      description: '',
       keywords: '',
     };
     setSelectedPage(path);
@@ -61,7 +74,7 @@ export function SEODashboard() {
   const handleSave = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/seo', {
+      const response = await fetch('/api/seo/static-pages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(currentSettings),
@@ -103,6 +116,9 @@ export function SEODashboard() {
                   <option value="/about">About Page</option>
                   <option value="/services">Services Page</option>
                   <option value="/contact">Contact Page</option>
+                  <option value="/blog">Blog Page</option>
+                  <option value="/videos">Videos Page</option>
+                  <option value="/shop">Shop Page</option>
                 </select>
               </label>
             </div>
@@ -112,8 +128,8 @@ export function SEODashboard() {
                 Meta Title
                 <input
                   type="text"
-                  value={currentSettings.metaTitle}
-                  onChange={(e) => handleChange('metaTitle', e.target.value)}
+                  value={currentSettings.title}
+                  onChange={(e) => handleChange('title', e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter meta title"
                 />
@@ -124,8 +140,8 @@ export function SEODashboard() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Meta Description
                 <textarea
-                  value={currentSettings.metaDescription}
-                  onChange={(e) => handleChange('metaDescription', e.target.value)}
+                  value={currentSettings.description}
+                  onChange={(e) => handleChange('description', e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   rows={4}
                   placeholder="Enter meta description"
@@ -138,7 +154,7 @@ export function SEODashboard() {
                 Keywords
                 <input
                   type="text"
-                  value={currentSettings.keywords}
+                  value={currentSettings.keywords || ''}
                   onChange={(e) => handleChange('keywords', e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter keywords (comma-separated)"
