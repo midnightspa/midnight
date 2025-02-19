@@ -1,9 +1,68 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/auth.config';
 import fs from 'fs/promises';
 import path from 'path';
+import prisma from '@/lib/prisma';
+
+async function getAllUrls() {
+  const [posts, videos, products, categories, subcategories] = await Promise.all([
+    prisma.post.findMany({
+      where: { published: true },
+      select: { slug: true },
+    }),
+    prisma.video.findMany({
+      where: { published: true },
+      select: { slug: true },
+    }),
+    prisma.product.findMany({
+      where: { published: true },
+      select: { slug: true },
+    }),
+    prisma.postCategory.findMany({
+      select: { slug: true },
+    }),
+    prisma.postSubCategory.findMany({
+      select: { slug: true },
+    }),
+  ]);
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themidnightspa.com';
+
+  const urls = [
+    baseUrl,
+    `${baseUrl}/about`,
+    `${baseUrl}/contact`,
+    `${baseUrl}/services`,
+    `${baseUrl}/blog`,
+    `${baseUrl}/videos`,
+    `${baseUrl}/shop`,
+    ...posts.map(post => `${baseUrl}/posts/${post.slug}`),
+    ...videos.map(video => `${baseUrl}/videos/${video.slug}`),
+    ...products.map(product => `${baseUrl}/shop/${product.slug}`),
+    ...categories.map(category => `${baseUrl}/categories/${category.slug}`),
+    ...subcategories.map(subcategory => `${baseUrl}/subcategories/${subcategory.slug}`),
+  ];
+
+  return Array.from(new Set(urls)); // Convert Set to Array
+}
+
+function generateSitemapXml(urls: string[]) {
+  const xmlUrls = urls
+    .map(url => `
+    <url>
+      <loc>${url}</loc>
+      <lastmod>${new Date().toISOString()}</lastmod>
+      <changefreq>daily</changefreq>
+      <priority>0.7</priority>
+    </url>`)
+    .join('');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${xmlUrls}
+</urlset>`;
+}
 
 export async function POST() {
   try {
@@ -12,68 +71,26 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch all published content
-    const [posts, products, videos] = await Promise.all([
-      prisma.post.findMany({
-        where: { published: true },
-        select: { slug: true, updatedAt: true },
-      }),
-      prisma.product.findMany({
-        where: { published: true },
-        select: { slug: true, updatedAt: true },
-      }),
-      prisma.video.findMany({
-        where: { published: true },
-        select: { slug: true, updatedAt: true },
-      }),
-    ]);
+    const urls = await getAllUrls();
+    const sitemap = generateSitemapXml(urls);
+    const sitemapPath = path.join(process.cwd(), 'public', 'sitemap.xml');
 
-    // Generate sitemap XML
-    const baseUrl = 'https://themidnightspa.com';
-    
-    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>${baseUrl}</loc>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-  ${posts.map(post => `
-  <url>
-    <loc>${baseUrl}/posts/${post.slug}</loc>
-    <lastmod>${post.updatedAt.toISOString()}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>`).join('')}
-  ${products.map(product => `
-  <url>
-    <loc>${baseUrl}/products/${product.slug}</loc>
-    <lastmod>${product.updatedAt.toISOString()}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>`).join('')}
-  ${videos.map(video => `
-  <url>
-    <loc>${baseUrl}/videos/${video.slug}</loc>
-    <lastmod>${video.updatedAt.toISOString()}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>`).join('')}
-</urlset>`;
+    await fs.writeFile(sitemapPath, sitemap);
 
-    // Write sitemap to public directory
-    const publicDir = path.join(process.cwd(), 'public');
-    await fs.writeFile(path.join(publicDir, 'sitemap.xml'), sitemap);
+    // Submit sitemap URL to Google
+    const sitemapUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/sitemap.xml`;
+    try {
+      await fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`);
+    } catch (error) {
+      console.error('Failed to ping Google with sitemap:', error);
+      // Continue execution even if ping fails
+    }
 
-    // Update sitemap URL in site settings
-    await prisma.siteSettings.updateMany({
-      data: {
-        sitemapXml: `${baseUrl}/sitemap.xml`,
-        updatedAt: new Date(),
-      },
+    return NextResponse.json({
+      success: true,
+      urlCount: urls.length,
+      lastUpdated: new Date().toISOString(),
     });
-
-    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error generating sitemap:', error);
     return NextResponse.json(
