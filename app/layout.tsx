@@ -97,9 +97,9 @@ export default function RootLayout({
           />
         </noscript>
         <AuthProvider>
-          <Providers>
+          <>
             <MainLayout>{children}</MainLayout>
-          </Providers>
+          </>
           <Toaster richColors position="top-right" />
         </AuthProvider>
       </body>
