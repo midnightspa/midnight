@@ -64,6 +64,25 @@ interface SubCategory {
   };
 }
 
+const shimmer = (w: number, h: number) => `
+<svg width="${w}" height="${h}" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <linearGradient id="g">
+      <stop stop-color="#f6f7f8" offset="20%" />
+      <stop stop-color="#edeef1" offset="50%" />
+      <stop stop-color="#f6f7f8" offset="70%" />
+    </linearGradient>
+  </defs>
+  <rect width="${w}" height="${h}" fill="#f6f7f8" />
+  <rect id="r" width="${w}" height="${h}" fill="url(#g)" />
+  <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1s" repeatCount="indefinite"  />
+</svg>`;
+
+const toBase64 = (str: string) =>
+  typeof window === 'undefined'
+    ? Buffer.from(str).toString('base64')
+    : window.btoa(str);
+
 async function getLatestVideos() {
   return await prisma.video.findMany({
     where: {
@@ -212,7 +231,11 @@ export default async function HomePage() {
                                 src={post.thumbnail || '/placeholder.jpg'}
                                 alt={post.title}
                                 fill
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                 className="object-cover"
+                                placeholder="blur"
+                                blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
+                                priority={true}
                               />
                               {post.category && (
                                 <span className="absolute top-4 left-4 px-3 py-1 bg-white/90 backdrop-blur-sm text-neutral-900 text-sm font-medium rounded-full">
@@ -272,7 +295,10 @@ export default async function HomePage() {
                         src={category.thumbnail || '/placeholder.jpg'}
                         alt={category.title}
                         fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        placeholder="blur"
+                        blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </div>
@@ -326,7 +352,11 @@ export default async function HomePage() {
                             src={getYouTubeThumbnail(video.youtubeUrl)}
                             alt={video.title}
                             fill
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                             className="object-cover"
+                            placeholder="blur"
+                            blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
+                            loading="lazy"
                           />
                           <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                             <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center transform group-hover:scale-110 transition-transform">
@@ -388,7 +418,11 @@ export default async function HomePage() {
                               src={post.thumbnail || '/placeholder.jpg'}
                               alt={post.title}
                               fill
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                               className="object-cover"
+                              placeholder="blur"
+                              blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
+                              loading="lazy"
                             />
                           </div>
                           <div className="p-6">
@@ -449,7 +483,11 @@ export default async function HomePage() {
                               src={post.thumbnail || '/placeholder.jpg'}
                               alt={post.title}
                               fill
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                               className="object-cover group-hover:scale-110 transition-transform duration-300"
+                              placeholder="blur"
+                              blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
+                              loading="lazy"
                             />
                           </div>
                           <div>

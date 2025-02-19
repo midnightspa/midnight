@@ -82,6 +82,26 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
+// Add this at the top of the file after imports
+const shimmer = (w: number, h: number) => `
+<svg width="${w}" height="${h}" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <linearGradient id="g">
+      <stop stop-color="#f6f7f8" offset="20%" />
+      <stop stop-color="#edeef1" offset="50%" />
+      <stop stop-color="#f6f7f8" offset="70%" />
+    </linearGradient>
+  </defs>
+  <rect width="${w}" height="${h}" fill="#f6f7f8" />
+  <rect id="r" width="${w}" height="${h}" fill="url(#g)" />
+  <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1s" repeatCount="indefinite"  />
+</svg>`;
+
+const toBase64 = (str: string) =>
+  typeof window === 'undefined'
+    ? Buffer.from(str).toString('base64')
+    : window.btoa(str);
+
 export default async function PostPage({ params }: { params: { slug: string } }) {
   const post = await prisma.post.findUnique({
     where: {
@@ -196,8 +216,11 @@ export default async function PostPage({ params }: { params: { slug: string } })
               src={post.thumbnail || '/placeholder.jpg'}
               alt={post.title}
               fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
               className="object-cover"
               priority
+              placeholder="blur"
+              blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(1200, 630))}`}
             />
           </div>
         </div>
@@ -294,7 +317,11 @@ export default async function PostPage({ params }: { params: { slug: string } })
                               src={relatedPost.thumbnail || '/placeholder.jpg'}
                               alt={relatedPost.title}
                               fill
+                              sizes="(max-width: 768px) 80px, 80px"
                               className="object-cover group-hover:scale-105 transition-transform duration-300"
+                              placeholder="blur"
+                              blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(80, 80))}`}
+                              loading="lazy"
                             />
                           </div>
                           <div>

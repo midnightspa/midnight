@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { mkdir } from 'fs/promises';
+import sharp from 'sharp';
 
 export async function POST(request: Request) {
   try {
@@ -50,14 +51,27 @@ export async function POST(request: Request) {
 
     // Generate unique filename
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-    const extension = file.name.split('.').pop();
+    const extension = 'webp'; // Always convert to WebP for better compression
     const filename = `${uniqueSuffix}.${extension}`;
     const filepath = join(uploadDir, filename);
 
-    console.log('Writing file to:', filepath);
+    console.log('Processing image...');
 
-    // Write the file
-    await writeFile(filepath, buffer);
+    // Optimize image using Sharp
+    const optimizedImage = await sharp(buffer)
+      .webp({ quality: 80 }) // Convert to WebP with 80% quality
+      .resize({
+        width: 1200, // Max width
+        height: 800, // Max height
+        fit: 'inside', // Maintain aspect ratio
+        withoutEnlargement: true // Don't upscale small images
+      })
+      .toBuffer();
+
+    console.log('Writing optimized file to:', filepath);
+
+    // Write the optimized file
+    await writeFile(filepath, optimizedImage);
     console.log('File written successfully');
 
     // Return the public URL
