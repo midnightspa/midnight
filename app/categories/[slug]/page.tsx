@@ -15,43 +15,40 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const category = await prisma.postCategory.findUnique({
     where: {
       slug: params.slug,
-    },
-    select: {
-      title: true,
-      description: true,
-      seoTitle: true,
-      seoDescription: true,
-      seoKeywords: true,
-      thumbnail: true,
-    },
+    }
   });
 
   if (!category) {
     return {
       title: 'Category Not Found',
       description: 'The requested category could not be found.',
-      robots: { index: false, follow: false },
+      robots: { index: false, follow: false }
     };
   }
 
-  const title = category.seoTitle || category.title;
-
   return {
-    title: title,
-    description: category.seoDescription || category.description || undefined,
-    keywords: category.seoKeywords || undefined,
+    title: category.seoTitle || `${category.title} - Wellness & Relaxation Articles`,
+    description: category.seoDescription || `Explore our collection of articles about ${category.title.toLowerCase()}. Find expert tips, guides, and insights to enhance your wellness journey.`,
+    keywords: category.seoKeywords || `${category.title.toLowerCase()}, wellness, relaxation, spa treatments, health tips`,
     openGraph: {
-      title,
-      description: category.seoDescription || category.description || undefined,
+      title: category.seoTitle || category.title,
+      description: category.seoDescription || category.description || `Explore our collection of articles about ${category.title.toLowerCase()}.`,
       type: 'website',
-      images: category.thumbnail ? [{ url: category.thumbnail }] : undefined,
+      images: category.thumbnail ? [
+        {
+          url: category.thumbnail,
+          width: 1200,
+          height: 630,
+          alt: category.title
+        }
+      ] : undefined
     },
     twitter: {
       card: 'summary_large_image',
-      title,
-      description: category.seoDescription || category.description || undefined,
-      images: category.thumbnail ? [category.thumbnail] : undefined,
-    },
+      title: category.seoTitle || category.title,
+      description: category.seoDescription || category.description || `Explore our collection of articles about ${category.title.toLowerCase()}.`,
+      images: category.thumbnail ? [category.thumbnail] : undefined
+    }
   };
 }
 

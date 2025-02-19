@@ -68,17 +68,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     };
   }
 
-  const title = post.seoTitle || post.title;
-  const description = post.seoDescription || post.excerpt || `Read ${post.title} by ${post.author.name}`;
-  const keywords = post.seoKeywords || `${post.category.title}, spa, wellness, ${post.title}`;
-
   return {
-    title: title,
-    description: description,
-    keywords: keywords,
+    title: post.seoTitle || post.title,
+    description: post.seoDescription || post.excerpt || `Read ${post.title} by ${post.author.name}`,
+    keywords: post.seoKeywords || `${post.category?.title || ''}, spa, wellness, ${post.title}`.toLowerCase(),
     openGraph: {
-      title: title,
-      description: description,
+      title: post.seoTitle || post.title,
+      description: post.seoDescription || post.excerpt || `Read ${post.title} by ${post.author.name}`,
       type: 'article',
       publishedTime: post.createdAt.toISOString(),
       images: post.thumbnail ? [
@@ -86,15 +82,15 @@ export async function generateMetadata({ params }: { params: { slug: string } })
           url: post.thumbnail,
           width: 1200,
           height: 630,
-          alt: title
+          alt: post.title
         }
       ] : undefined
     },
     twitter: {
       card: 'summary_large_image',
-      title: title,
-      description: description,
-      images: post.thumbnail && typeof post.thumbnail === 'string' ? [post.thumbnail] : undefined
+      title: post.seoTitle || post.title,
+      description: post.seoDescription || post.excerpt || `Read ${post.title} by ${post.author.name}`,
+      images: post.thumbnail ? [post.thumbnail] : undefined
     }
   };
 }
