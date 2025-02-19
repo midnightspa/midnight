@@ -174,7 +174,10 @@ export default async function VideoPage({ params }: { params: { slug: string } }
               </div>
 
               {/* YouTube Subscribe Button */}
-              <div className="flex items-center">
+              <div className="flex flex-col items-center gap-2">
+                <h3 className="text-sm font-semibold text-neutral-900 text-center">
+                  🎥 Subscribe to Our YouTube Channel!
+                </h3>
                 <YouTubeSubscribe channelId="UCBUNH_lKitDawWd7zKYgMMQ" />
               </div>
             </div>

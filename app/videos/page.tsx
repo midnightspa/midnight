@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Poppins } from 'next/font/google';
+import YouTubeSubscribe from '@/app/components/YouTubeSubscribe';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -96,17 +97,14 @@ export default function VideoArchive() {
                 </p>
               </div>
 
-              {/* Subscribe Button */}
-              <button
-                onClick={() => setIsSubscribed(!isSubscribed)}
-                className={`px-8 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ${
-                  isSubscribed
-                    ? 'bg-neutral-100 text-neutral-900 hover:bg-neutral-200'
-                    : 'bg-red-600 text-white hover:bg-red-700'
-                }`}
-              >
-                {isSubscribed ? 'Subscribed' : 'Subscribe'}
-              </button>
+              {/* Subscribe Section */}
+              <div className="flex flex-col items-center gap-2">
+                <h3 className="text-sm font-semibold text-neutral-900 text-center">
+                  🎥 Subscribe to Our YouTube Channel!
+                </h3>
+               
+                <YouTubeSubscribe channelId="UCBUNH_lKitDawWd7zKYgMMQ" />
+              </div>
             </div>
           </div>
 

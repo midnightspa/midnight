@@ -5,6 +5,7 @@ import { Poppins } from 'next/font/google';
 import SubCatCarousel from '@/components/SubCatCarousel';
 import { PrismaClient } from '@prisma/client';
 import { generateMetadata as generateSiteMetadata, generateStructuredData, getSiteSettings } from '@/lib/seo';
+import MobileHero from '@/app/components/MobileHero';
 
 const prisma = new PrismaClient();
 
@@ -185,11 +186,16 @@ export default async function HomePage() {
         />
         <div className={`min-h-screen bg-white ${poppins.className}`}>
           {/* Hero Section with Enhanced Design */}
-          <section className="relative h-[70vh] bg-gradient-to-br from-neutral-100 to-neutral-50">
+          <section className="relative bg-gray-100">
             <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
-            <div className="container mx-auto px-4 h-full flex items-center justify-between">
+            
+            {/* Mobile Hero */}
+            <MobileHero posts={posts} />
+
+            {/* Desktop & Tablet Hero */}
+            <div className="hidden lg:flex container mx-auto px-4 h-[70vh] items-center justify-between relative overflow-hidden">
               {/* Left side content */}
-              <div className="max-w-xl relative">
+              <div className="max-w-xl relative z-10">
                 <div className="absolute -top-10 -left-10 w-20 h-20 bg-neutral-900 rounded-full opacity-5"></div>
                 <h1 className="text-6xl font-bold text-neutral-900 mb-6 leading-tight">
                 Dream Beyond  <span className="text-neutral-700">Limits</span>
@@ -214,19 +220,19 @@ export default async function HomePage() {
               </div>
 
               {/* Right side slider */}
-              <div className="hidden lg:block w-[400px] relative h-full">
-                <div className="absolute inset-0 overflow-hidden">
-                  <div className="h-full relative">
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-neutral-50/80 z-10 pointer-events-none"></div>
-                    <div className="animate-slide-vertical">
+              <div className="w-[400px] relative h-[70vh] overflow-hidden">
+                <div className="absolute inset-0">
+                  <div className="relative h-full">
+                    <div className="absolute inset-0 bg-gradient-to-b from-gray-100 via-transparent to-gray-100 z-10 pointer-events-none"></div>
+                    <div className="vertical-carousel py-8">
                       {[...posts, ...posts].map((post, index) => (
                         <Link 
                           key={`${post.id}-${index}`}
                           href={`/posts/${post.slug}`}
-                          className="block transform transition-all duration-500 hover:scale-105 hover:-translate-x-2 mb-4"
+                          className="block transform transition-all duration-500 hover:scale-105 hover:-translate-x-2 mb-6"
                         >
                           <div className="bg-white rounded-xl overflow-hidden shadow-lg w-[380px] hover:shadow-xl transition-shadow duration-300">
-                            <div className="relative h-48">
+                            <div className="relative h-40">
                               <Image
                                 src={post.thumbnail || '/placeholder.jpg'}
                                 alt={post.title}
@@ -235,7 +241,7 @@ export default async function HomePage() {
                                 className="object-cover"
                                 placeholder="blur"
                                 blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
-                                priority={true}
+                                priority={index < 2}
                               />
                               {post.category && (
                                 <span className="absolute top-4 left-4 px-3 py-1 bg-white/90 backdrop-blur-sm text-neutral-900 text-sm font-medium rounded-full">
@@ -243,7 +249,7 @@ export default async function HomePage() {
                                 </span>
                               )}
                             </div>
-                            <div className="p-5">
+                            <div className="p-4">
                               <h3 className="text-lg font-semibold text-neutral-900 mb-2 line-clamp-2">
                                 {post.title}
                               </h3>
