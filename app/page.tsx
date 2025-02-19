@@ -84,6 +84,8 @@ const toBase64 = (str: string) =>
     ? Buffer.from(str).toString('base64')
     : window.btoa(str);
 
+const DEFAULT_THUMBNAIL = '/placeholder.jpg';
+
 async function getLatestVideos() {
   return await prisma.video.findMany({
     where: {
@@ -172,8 +174,19 @@ export default async function HomePage() {
     ]);
 
     const getYouTubeThumbnail = (url: string) => {
-      const videoId = url.split('v=')[1]?.split('&')[0];
-      return videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : '/placeholder.jpg';
+      try {
+        const videoId = url.split('v=')[1]?.split('&')[0];
+        return videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : DEFAULT_THUMBNAIL;
+      } catch (error) {
+        console.error('Error getting YouTube thumbnail:', error);
+        return DEFAULT_THUMBNAIL;
+      }
+    };
+
+    const getImageUrl = (url: string | null) => {
+      if (!url) return DEFAULT_THUMBNAIL;
+      if (url.startsWith('http')) return url;
+      return url.startsWith('/') ? url : `/${url}`;
     };
 
     return (
@@ -234,7 +247,7 @@ export default async function HomePage() {
                           <div className="bg-white rounded-xl overflow-hidden shadow-lg w-[380px] hover:shadow-xl transition-shadow duration-300">
                             <div className="relative h-40">
                               <Image
-                                src={post.thumbnail || '/placeholder.jpg'}
+                                src={getImageUrl(post.thumbnail)}
                                 alt={post.title}
                                 fill
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -242,6 +255,9 @@ export default async function HomePage() {
                                 placeholder="blur"
                                 blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
                                 priority={index < 2}
+                                onError={(e: any) => {
+                                  e.target.src = DEFAULT_THUMBNAIL;
+                                }}
                               />
                               {post.category && (
                                 <span className="absolute top-4 left-4 px-3 py-1 bg-white/90 backdrop-blur-sm text-neutral-900 text-sm font-medium rounded-full">
@@ -298,13 +314,16 @@ export default async function HomePage() {
                   >
                     <div className="h-48 relative mb-4 rounded-lg overflow-hidden">
                       <Image
-                        src={category.thumbnail || '/placeholder.jpg'}
+                        src={getImageUrl(category.thumbnail)}
                         alt={category.title}
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                         placeholder="blur"
                         blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
+                        onError={(e: any) => {
+                          e.target.src = DEFAULT_THUMBNAIL;
+                        }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </div>
@@ -421,14 +440,17 @@ export default async function HomePage() {
                         <Link href={`/posts/${post.slug}`} className="block">
                           <div className="relative h-48">
                             <Image
-                              src={post.thumbnail || '/placeholder.jpg'}
+                              src={getImageUrl(post.thumbnail)}
                               alt={post.title}
                               fill
                               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                               className="object-cover"
                               placeholder="blur"
                               blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
-                              loading="lazy"
+                              priority={index < 2}
+                              onError={(e: any) => {
+                                e.target.src = DEFAULT_THUMBNAIL;
+                              }}
                             />
                           </div>
                           <div className="p-6">
@@ -486,7 +508,7 @@ export default async function HomePage() {
                         <Link key={post.id} href={`/posts/${post.id}`} className="flex gap-4 group">
                           <div className="w-20 h-20 relative rounded-lg overflow-hidden flex-shrink-0">
                             <Image
-                              src={post.thumbnail || '/placeholder.jpg'}
+                              src={getImageUrl(post.thumbnail)}
                               alt={post.title}
                               fill
                               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -494,6 +516,9 @@ export default async function HomePage() {
                               placeholder="blur"
                               blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
                               loading="lazy"
+                              onError={(e: any) => {
+                                e.target.src = DEFAULT_THUMBNAIL;
+                              }}
                             />
                           </div>
                           <div>
