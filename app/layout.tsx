@@ -19,23 +19,14 @@ export const metadata: Metadata = {
   },
   description: 'Your ultimate destination for relaxation and wellness',
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
-    other: [
-      {
-        rel: 'icon',
-        type: 'image/png',
-        sizes: '32x32',
-        url: '/favicon-32x32.png',
-      },
-      {
-        rel: 'icon',
-        type: 'image/png',
-        sizes: '16x16',
-        url: '/favicon-16x16.png',
-      },
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' }
     ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
+    ]
   },
   manifest: '/site.webmanifest',
   openGraph: {
@@ -52,10 +43,13 @@ export const metadata: Metadata = {
     description: 'Your ultimate destination for relaxation and wellness',
     creator: '@midnightspa',
   },
-  themeColor: '#ffffff',
   other: {
     'msapplication-TileColor': '#ffffff'
   }
+};
+
+export const viewport = {
+  themeColor: '#ffffff',
 };
 
 export default function RootLayout({
