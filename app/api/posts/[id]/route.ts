@@ -66,28 +66,62 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const formData = await request.formData();
-    const title = formData.get('title') as string;
-    const content = formData.get('content') as string;
-    const categoryId = formData.get('categoryId') as string;
-    const excerpt = formData.get('excerpt') as string;
-    const subcategoryId = formData.get('subcategoryId') as string;
-    const tags = JSON.parse(formData.get('tags') as string || '[]');
-    const seoTitle = formData.get('seoTitle') as string;
-    const seoDescription = formData.get('seoDescription') as string;
-    const seoKeywords = formData.get('seoKeywords') as string;
-    const published = formData.get('published') === 'true';
-    const thumbnailFile = formData.get('thumbnail') as File | null;
+    // Check content type to determine how to parse the request
+    const contentType = request.headers.get('content-type') || '';
+    let data: any = {};
+    
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      // Convert FormData to object
+      formData.forEach((value, key) => {
+        // Handle special cases for boolean values
+        if (key === 'published') {
+          data[key] = value === 'true';
+        } else if (key === 'tags') {
+          data[key] = JSON.parse(value as string);
+        } else {
+          data[key] = value;
+        }
+      });
+    } else {
+      // Assume JSON
+      data = await request.json();
+    }
 
-    if (!title || !content || !categoryId) {
+    // If we're only updating the published status
+    if (Object.keys(data).length === 1 && 'published' in data) {
+      const post = await prisma.post.update({
+        where: { id: params.id },
+        data: { published: data.published }
+      });
+      return NextResponse.json(post);
+    }
+
+    // Handle full post update
+    const {
+      title,
+      content,
+      categoryId,
+      excerpt,
+      subcategoryId,
+      tags,
+      seoTitle,
+      seoDescription,
+      seoKeywords,
+      published,
+      thumbnailFile
+    } = data;
+
+    // Validate required fields for full update
+    if (title && !content || !categoryId) {
       return NextResponse.json(
-        { error: 'Title, content, and category are required' },
+        { error: 'Title, content, and category are required for full update' },
         { status: 400 }
       );
     }
 
-    // Create slug from title
-    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    // Create slug from title if title is provided
+    const slug = title ? title.toLowerCase().replace(/[^a-z0-9]+/g, '-') : undefined;
 
     let thumbnail = undefined;
     if (thumbnailFile) {
@@ -122,17 +156,17 @@ export async function PATCH(
         id: params.id,
       },
       data: {
-        title,
-        slug,
-        excerpt,
-        content,
-        categoryId,
+        ...(title && { title }),
+        ...(slug && { slug }),
+        ...(excerpt && { excerpt }),
+        ...(content && { content }),
+        ...(categoryId && { categoryId }),
         subcategoryId: subcategoryId || undefined,
-        tags,
-        seoTitle,
-        seoDescription,
-        seoKeywords,
-        published,
+        ...(Array.isArray(tags) && { tags }),
+        ...(seoTitle && { seoTitle }),
+        ...(seoDescription && { seoDescription }),
+        ...(seoKeywords && { seoKeywords }),
+        ...(typeof published === 'boolean' && { published }),
         ...(thumbnail && { thumbnail }),
       },
     });

@@ -57,12 +57,12 @@ export default function PostList() {
 
   const handlePublishToggle = async (postId: string, currentStatus: boolean) => {
     try {
+      const formData = new FormData();
+      formData.append('published', (!currentStatus).toString());
+
       const response = await fetch(`/api/posts/${postId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ published: !currentStatus }),
+        body: formData,
       });
 
       if (!response.ok) throw new Error('Failed to update post status');
