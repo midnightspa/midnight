@@ -1,49 +1,31 @@
-import { Suspense } from 'react';
-import IndexingManager from './components/IndexingManager';
-import SeoStats from './components/SeoStats';
-import SitemapManager from './components/SitemapManager';
+import { Metadata } from 'next';
 import MetaTagsAnalyzer from './components/MetaTagsAnalyzer';
+import SitemapManager from './components/SitemapManager';
+import SeoStats from './components/SeoStats';
+import IndexingManager from './components/IndexingManager';
+import StaticPagesSeo from './components/StaticPagesSeo';
+
+export const metadata: Metadata = {
+  title: 'SEO Dashboard - Midnight Spa',
+  description: 'Manage your website\'s SEO settings and monitor performance',
+};
 
 export default function SEODashboard() {
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">SEO Management</h1>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Suspense fallback={<div>Loading stats...</div>}>
-          <SeoStats />
-        </Suspense>
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">SEO Dashboard</h2>
+        <p className="text-muted-foreground">
+          Manage your website's SEO settings and monitor performance
+        </p>
       </div>
 
       <div className="grid gap-6">
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Sitemap Management</h2>
-            <Suspense fallback={<div>Loading sitemap manager...</div>}>
-              <SitemapManager />
-            </Suspense>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Google Search Console Integration</h2>
-            <Suspense fallback={<div>Loading indexing manager...</div>}>
-              <IndexingManager />
-            </Suspense>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Meta Tags Analysis</h2>
-            <Suspense fallback={<div>Loading meta tags analyzer...</div>}>
-              <MetaTagsAnalyzer />
-            </Suspense>
-          </div>
-        </div>
+        <SeoStats />
+        <StaticPagesSeo />
+        <IndexingManager />
+        <MetaTagsAnalyzer />
+        <SitemapManager />
       </div>
     </div>
   );

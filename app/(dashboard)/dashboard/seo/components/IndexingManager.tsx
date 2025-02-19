@@ -1,171 +1,145 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { toast } from 'react-hot-toast';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Loader2, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 
-interface IndexingLog {
-  id: string;
-  urls: string[];
-  type: string;
-  results: any;
-  createdAt: string;
-  user: {
-    name: string;
-    email: string;
-  };
+interface IndexingStatus {
+  url: string;
+  status: 'PENDING' | 'INDEXED' | 'NOT_INDEXED' | 'ERROR';
+  lastChecked?: Date;
+  details?: any;
 }
 
 export default function IndexingManager() {
-  const [logs, setLogs] = useState<IndexingLog[]>([]);
+  const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedContent, setSelectedContent] = useState<string[]>([]);
-  const [contentType, setContentType] = useState('posts');
+  const [error, setError] = useState<string | null>(null);
+  const [indexingStatus, setIndexingStatus] = useState<IndexingStatus | null>(null);
 
-  useEffect(() => {
-    fetchLogs();
-  }, []);
-
-  const fetchLogs = async () => {
-    try {
-      const response = await fetch('/api/seo/index-url');
-      if (!response.ok) throw new Error('Failed to fetch logs');
-      const data = await response.json();
-      setLogs(data);
-    } catch (error) {
-      console.error('Error fetching logs:', error);
-      toast.error('Failed to fetch indexing logs');
-    }
-  };
-
-  const fetchContent = async () => {
+  const submitForIndexing = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/${contentType}`);
-      if (!response.ok) throw new Error(`Failed to fetch ${contentType}`);
-      const data = await response.json();
-      
-      // Extract URLs based on content type
-      const urls = data.map((item: any) => 
-        `https://themidnightspa.com/${contentType}/${item.slug}`
-      );
-      setSelectedContent(urls);
-    } catch (error) {
-      console.error('Error fetching content:', error);
-      toast.error(`Failed to fetch ${contentType}`);
+      setError(null);
+
+      const response = await fetch('/api/seo/index-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urls: [url] }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to submit URL for indexing');
+      }
+
+      await checkIndexingStatus();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmitForIndexing = async () => {
-    if (!selectedContent.length) {
-      toast.error('Please select content to index');
-      return;
-    }
-
+  const checkIndexingStatus = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/seo/index-url', {
+      setError(null);
+
+      const response = await fetch('/api/seo/check-indexing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          urls: selectedContent,
-          type: 'URL_UPDATED',
-        }),
+        body: JSON.stringify({ url }),
       });
 
-      if (!response.ok) throw new Error('Failed to submit URLs');
-      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to check indexing status');
+      }
+
       const data = await response.json();
-      toast.success('URLs submitted for indexing');
-      fetchLogs();
-    } catch (error) {
-      console.error('Error submitting URLs:', error);
-      toast.error('Failed to submit URLs for indexing');
+      
+      setIndexingStatus({
+        url,
+        status: data.data?.indexStatusResult?.verdict === 'PASS' ? 'INDEXED' : 'NOT_INDEXED',
+        lastChecked: new Date(),
+        details: data.data
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      setIndexingStatus({
+        url,
+        status: 'ERROR',
+        lastChecked: new Date(),
+        details: err
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-4">Google Search Console Indexing</h2>
-        
+    <Card>
+      <CardHeader>
+        <CardTitle>URL Indexing Manager</CardTitle>
+        <CardDescription>Submit URLs to Google for indexing and monitor their status</CardDescription>
+      </CardHeader>
+      <CardContent>
         <div className="space-y-4">
           <div className="flex gap-4">
-            <select
-              value={contentType}
-              onChange={(e) => setContentType(e.target.value)}
-              className="rounded-md border-gray-300"
-            >
-              <option value="posts">Posts</option>
-              <option value="videos">Videos</option>
-              <option value="products">Products</option>
-              <option value="categories">Categories</option>
-            </select>
-            
-            <button
-              onClick={fetchContent}
+            <Input
+              placeholder="Enter URL (e.g., https://themidnightspa.com/categories)"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
               disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-            >
-              Fetch Content
-            </button>
-            
-            <button
-              onClick={handleSubmitForIndexing}
-              disabled={loading || !selectedContent.length}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
-            >
+            />
+            <Button onClick={submitForIndexing} disabled={loading || !url}>
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Submit for Indexing
-            </button>
+            </Button>
+            {indexingStatus && (
+              <Button variant="outline" onClick={checkIndexingStatus} disabled={loading}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Check Status
+              </Button>
+            )}
           </div>
 
-          {selectedContent.length > 0 && (
-            <div className="mt-4">
-              <h3 className="text-lg font-medium mb-2">Selected URLs ({selectedContent.length})</h3>
-              <div className="max-h-40 overflow-y-auto bg-gray-50 p-4 rounded-md">
-                {selectedContent.map((url, index) => (
-                  <div key={index} className="text-sm text-gray-600">{url}</div>
-                ))}
-              </div>
-            </div>
+          {error && (
+            <Alert variant="destructive">
+              <XCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {indexingStatus && (
+            <Alert variant={indexingStatus.status === 'INDEXED' ? 'default' : 'warning'}>
+              {indexingStatus.status === 'INDEXED' ? (
+                <CheckCircle className="h-4 w-4" />
+              ) : (
+                <XCircle className="h-4 w-4" />
+              )}
+              <AlertTitle>Indexing Status</AlertTitle>
+              <AlertDescription>
+                <div className="space-y-2">
+                  <p>URL: {indexingStatus.url}</p>
+                  <p>Status: {indexingStatus.status}</p>
+                  {indexingStatus.lastChecked && (
+                    <p>Last Checked: {indexingStatus.lastChecked.toLocaleString()}</p>
+                  )}
+                  {indexingStatus.details?.indexStatusResult?.verdict === 'FAIL' && (
+                    <p>Reason: {indexingStatus.details.indexStatusResult.message}</p>
+                  )}
+                </div>
+              </AlertDescription>
+            </Alert>
           )}
         </div>
-      </div>
-
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-4">Indexing History</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="px-4 py-2 text-left">Date</th>
-                <th className="px-4 py-2 text-left">User</th>
-                <th className="px-4 py-2 text-left">URLs</th>
-                <th className="px-4 py-2 text-left">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log) => (
-                <tr key={log.id} className="border-t">
-                  <td className="px-4 py-2">
-                    {new Date(log.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-2">{log.user.name}</td>
-                  <td className="px-4 py-2">{log.urls.length} URLs</td>
-                  <td className="px-4 py-2">
-                    {log.results.every((r: any) => r.status === 'fulfilled')
-                      ? 'Success'
-                      : 'Partial Success'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 } 

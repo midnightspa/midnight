@@ -1,143 +1,187 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { toast } from 'react-hot-toast';
+import { useState, ChangeEvent } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Loader2 } from 'lucide-react';
 
-interface MetaTagIssue {
-  url: string;
-  type: string;
-  message: string;
+interface MetaTagsResult {
+  title: string;
+  description: string;
+  keywords: string;
+  ogTitle: string;
+  ogDescription: string;
+  ogImage: string;
+  twitterCard: string;
+  twitterTitle: string;
+  twitterDescription: string;
+  twitterImage: string;
+  canonical: string;
 }
 
 export default function MetaTagsAnalyzer() {
+  const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  const [issues, setIssues] = useState<MetaTagIssue[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<MetaTagsResult | null>(null);
 
-  useEffect(() => {
-    analyzeTags();
-  }, []);
+  const handleUrlChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setUrl(e.target.value);
+    setError(null);
+  };
 
-  const analyzeTags = async () => {
+  const validateUrl = (url: string): boolean => {
     try {
+      const parsedUrl = new URL(url);
+      return parsedUrl.hostname === 'themidnightspa.com';
+    } catch {
+      return false;
+    }
+  };
+
+  const analyzeMetaTags = async () => {
+    try {
+      if (!validateUrl(url)) {
+        setError('Please enter a valid URL from themidnightspa.com domain');
+        return;
+      }
+
       setLoading(true);
-      
-      // Fetch all content
-      const [posts, products, videos] = await Promise.all([
-        fetch('/api/posts').then(res => res.json()),
-        fetch('/api/products').then(res => res.json()),
-        fetch('/api/videos').then(res => res.json())
-      ]);
+      setError(null);
+      setResult(null);
 
-      const newIssues: MetaTagIssue[] = [];
-
-      // Analyze posts
-      posts.forEach((post: any) => {
-        if (!post.seoTitle) {
-          newIssues.push({
-            url: `/posts/${post.slug}`,
-            type: 'Missing SEO Title',
-            message: `Post "${post.title}" is missing SEO title`
-          });
-        }
-        if (!post.seoDescription) {
-          newIssues.push({
-            url: `/posts/${post.slug}`,
-            type: 'Missing Meta Description',
-            message: `Post "${post.title}" is missing meta description`
-          });
-        }
+      const response = await fetch('/api/seo/analyze-meta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
       });
 
-      // Analyze products
-      products.forEach((product: any) => {
-        if (!product.seoTitle) {
-          newIssues.push({
-            url: `/products/${product.slug}`,
-            type: 'Missing SEO Title',
-            message: `Product "${product.title}" is missing SEO title`
-          });
-        }
-        if (!product.seoDescription) {
-          newIssues.push({
-            url: `/products/${product.slug}`,
-            type: 'Missing Meta Description',
-            message: `Product "${product.title}" is missing meta description`
-          });
-        }
-      });
+      const data = await response.json();
 
-      // Analyze videos
-      videos.forEach((video: any) => {
-        if (!video.seoTitle) {
-          newIssues.push({
-            url: `/videos/${video.slug}`,
-            type: 'Missing SEO Title',
-            message: `Video "${video.title}" is missing SEO title`
-          });
-        }
-        if (!video.seoDescription) {
-          newIssues.push({
-            url: `/videos/${video.slug}`,
-            type: 'Missing Meta Description',
-            message: `Video "${video.title}" is missing meta description`
-          });
-        }
-      });
+      if (!response.ok) {
+        throw new Error(data.error || data.details || 'Failed to analyze meta tags');
+      }
 
-      setIssues(newIssues);
-    } catch (error) {
-      console.error('Error analyzing meta tags:', error);
-      toast.error('Failed to analyze meta tags');
+      setResult(data);
+    } catch (err) {
+      console.error('Error analyzing meta tags:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred while analyzing meta tags');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-500">
-            Found {issues.length} issues
-          </p>
-        </div>
-        <button
-          onClick={analyzeTags}
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? 'Analyzing...' : 'Analyze Meta Tags'}
-        </button>
-      </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Meta Tags Analyzer</CardTitle>
+        <CardDescription>Analyze meta tags of any page on your website</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex gap-4">
+            <Input
+              placeholder="Enter URL (e.g., https://themidnightspa.com/categories)"
+              value={url}
+              onChange={handleUrlChange}
+              disabled={loading}
+            />
+            <Button onClick={analyzeMetaTags} disabled={loading || !url}>
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Analyze
+            </Button>
+          </div>
 
-      {issues.length > 0 ? (
-        <div className="mt-4 space-y-2">
-          {issues.map((issue, index) => (
-            <div
-              key={index}
-              className="p-3 bg-yellow-50 border border-yellow-200 rounded-md"
-            >
-              <div className="flex items-start">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-yellow-800">
-                    {issue.type}
-                  </p>
-                  <p className="mt-1 text-sm text-yellow-700">
-                    {issue.message}
-                  </p>
-                  <p className="mt-1 text-xs text-yellow-600">
-                    URL: {issue.url}
-                  </p>
-                </div>
+          {error && (
+            <Alert variant="destructive">
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {result && (
+            <div className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Basic Meta Tags</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <dl className="space-y-2">
+                      <div>
+                        <dt className="font-medium">Title</dt>
+                        <dd className="text-sm text-muted-foreground">{result.title}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium">Description</dt>
+                        <dd className="text-sm text-muted-foreground">{result.description}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium">Keywords</dt>
+                        <dd className="text-sm text-muted-foreground">{result.keywords}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium">Canonical URL</dt>
+                        <dd className="text-sm text-muted-foreground">{result.canonical}</dd>
+                      </div>
+                    </dl>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Open Graph Tags</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <dl className="space-y-2">
+                      <div>
+                        <dt className="font-medium">OG Title</dt>
+                        <dd className="text-sm text-muted-foreground">{result.ogTitle}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium">OG Description</dt>
+                        <dd className="text-sm text-muted-foreground">{result.ogDescription}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium">OG Image</dt>
+                        <dd className="text-sm text-muted-foreground">{result.ogImage}</dd>
+                      </div>
+                    </dl>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Twitter Card Tags</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <dl className="space-y-2">
+                      <div>
+                        <dt className="font-medium">Card Type</dt>
+                        <dd className="text-sm text-muted-foreground">{result.twitterCard}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium">Title</dt>
+                        <dd className="text-sm text-muted-foreground">{result.twitterTitle}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium">Description</dt>
+                        <dd className="text-sm text-muted-foreground">{result.twitterDescription}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium">Image</dt>
+                        <dd className="text-sm text-muted-foreground">{result.twitterImage}</dd>
+                      </div>
+                    </dl>
+                  </CardContent>
+                </Card>
               </div>
             </div>
-          ))}
+          )}
         </div>
-      ) : (
-        <div className="text-center py-4">
-          <p className="text-sm text-gray-500">No meta tag issues found</p>
-        </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 } 

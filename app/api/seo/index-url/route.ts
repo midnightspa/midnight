@@ -12,6 +12,7 @@ export async function POST(request: Request) {
     }
 
     const { urls, type } = await request.json();
+    console.log('Received indexing request:', { urls, type });
 
     if (!urls || !Array.isArray(urls)) {
       return NextResponse.json(
@@ -20,23 +21,61 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate URLs
+    const invalidUrls = urls.filter(url => !url.startsWith('https://themidnightspa.com'));
+    if (invalidUrls.length > 0) {
+      return NextResponse.json(
+        { error: 'All URLs must be from themidnightspa.com domain', invalidUrls },
+        { status: 400 }
+      );
+    }
+
+    console.log('Submitting URLs to Google Indexing API...');
     const results = await submitUrlsToIndex(urls, type);
+    console.log('Submission results:', results);
+
+    // Check if any submissions failed
+    const failedSubmissions = results.filter(result => 
+      result.status === 'rejected' || (result.status === 'fulfilled' && !result.value.success)
+    );
+
+    if (failedSubmissions.length > 0) {
+      console.error('Some URL submissions failed:', failedSubmissions);
+    }
 
     // Log indexing request to database
-    await prisma.seoIndexingLog.create({
-      data: {
-        urls: urls as string[],
-        type: type || 'URL_UPDATED',
-        results: results as any,
-        userId: session.user.id,
-      },
-    });
+    try {
+      await prisma.seoIndexingLog.create({
+        data: {
+          urls: urls as string[],
+          type: type || 'URL_UPDATED',
+          results: results as any,
+          userId: session.user.id,
+        },
+      });
+    } catch (dbError) {
+      console.error('Failed to log indexing request:', dbError);
+      // Continue execution even if logging fails
+    }
 
-    return NextResponse.json({ results });
+    return NextResponse.json({ 
+      results,
+      failedCount: failedSubmissions.length,
+      totalCount: urls.length
+    });
   } catch (error) {
-    console.error('Error submitting URLs for indexing:', error);
+    console.error('Detailed error in index-url API:', {
+      error: error instanceof Error ? {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      } : error
+    });
     return NextResponse.json(
-      { error: 'Failed to submit URLs for indexing' },
+      { 
+        error: 'Failed to submit URLs for indexing',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
