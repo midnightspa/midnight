@@ -15,9 +15,10 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
   title: {
     template: '%s | Midnight Spa',
-    default: 'Midnight Spa'
+    default: 'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness'
   },
-  description: 'Your ultimate destination for relaxation and wellness',
+  description: 'Discover luxury spa treatments, wellness tips, and relaxation techniques at Midnight Spa. Expert guides, personalized services, and a tranquil atmosphere for your ultimate wellness journey.',
+  keywords: 'spa, wellness, relaxation, massage, treatments, luxury spa, wellness center, self-care, beauty treatments, spa services',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
@@ -33,14 +34,14 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: process.env.NEXT_PUBLIC_BASE_URL,
-    title: 'Midnight Spa',
-    description: 'Your ultimate destination for relaxation and wellness',
+    title: 'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness',
+    description: 'Discover luxury spa treatments, wellness tips, and relaxation techniques at Midnight Spa. Expert guides, personalized services, and a tranquil atmosphere for your ultimate wellness journey.',
     siteName: 'Midnight Spa',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Midnight Spa',
-    description: 'Your ultimate destination for relaxation and wellness',
+    title: 'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness',
+    description: 'Discover luxury spa treatments, wellness tips, and relaxation techniques at Midnight Spa. Expert guides, personalized services, and a tranquil atmosphere.',
     creator: '@midnightspa',
   },
   other: {
