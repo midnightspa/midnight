@@ -24,7 +24,7 @@ export default function PostList() {
 
   const fetchPosts = async () => {
     try {
-      const response = await fetch('/api/posts', {
+      const response = await fetch('/api/posts?includeUnpublished=true', {
         cache: 'no-store'
       });
       if (!response.ok) throw new Error('Failed to fetch posts');

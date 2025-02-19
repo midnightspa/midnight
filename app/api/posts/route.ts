@@ -140,10 +140,15 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const categorySlug = searchParams.get('category');
     const subcategorySlug = searchParams.get('subcategory');
+    const includeUnpublished = searchParams.get('includeUnpublished') === 'true';
+
+    // Get the session to check if user is authenticated for unpublished posts
+    const session = await getServerSession(authOptions);
+    const shouldShowUnpublished = includeUnpublished && session?.user;
 
     const posts = await prisma.post.findMany({
       where: {
-        published: true,
+        published: shouldShowUnpublished ? undefined : true,
         ...(categorySlug && {
           category: {
             slug: categorySlug
