@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,9 +39,12 @@ export function SEODashboard() {
     description: '',
     keywords: '',
   });
-  const [urlToIndex, setUrlToIndex] = useState('');
+  const [urls, setUrls] = useState<string[]>([]);
+  const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
+  const [fetchingUrls, setFetchingUrls] = useState(false);
   const [indexingResults, setIndexingResults] = useState<IndexingResult[]>([]);
   const [sitemapStatus, setSitemapStatus] = useState<{ lastUpdated: string; urlCount: number } | null>(null);
+  const [activeTab, setActiveTab] = useState('static-pages');
 
   useEffect(() => {
     loadSettings();
@@ -130,23 +133,80 @@ export function SEODashboard() {
     }
   };
 
-  const handleSubmitUrl = async () => {
+  const fetchAllUrls = async () => {
+    try {
+      setFetchingUrls(true);
+      const [postsRes, videosRes, productsRes] = await Promise.all([
+        fetch('/api/posts?published=true'),
+        fetch('/api/videos?published=true'),
+        fetch('/api/products?published=true')
+      ]);
+
+      const [posts, videos, products] = await Promise.all([
+        postsRes.json(),
+        videosRes.json(),
+        productsRes.json()
+      ]);
+
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themidnightspa.com';
+      
+      const allUrls = [
+        `${baseUrl}`,
+        `${baseUrl}/about`,
+        `${baseUrl}/contact`,
+        `${baseUrl}/services`,
+        `${baseUrl}/blog`,
+        `${baseUrl}/videos`,
+        `${baseUrl}/shop`,
+        ...posts.map((post: any) => `${baseUrl}/posts/${post.slug}`),
+        ...videos.map((video: any) => `${baseUrl}/videos/${video.slug}`),
+        ...products.map((product: any) => `${baseUrl}/shop/${product.slug}`)
+      ];
+
+      setUrls(allUrls);
+      alert(`Found ${allUrls.length} URLs`);
+    } catch (err) {
+      console.error('Error fetching URLs:', err);
+      alert('Failed to fetch URLs');
+    } finally {
+      setFetchingUrls(false);
+    }
+  };
+
+  const handleUrlSelect = (url: string) => {
+    setSelectedUrls(prev => 
+      prev.includes(url) 
+        ? prev.filter(u => u !== url)
+        : [...prev, url]
+    );
+  };
+
+  const handleSelectAll = () => {
+    setSelectedUrls(urls.length === selectedUrls.length ? [] : [...urls]);
+  };
+
+  const handleIndexSelected = async () => {
+    if (selectedUrls.length === 0) {
+      alert('Please select URLs to index');
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await fetch('/api/seo/index-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ urls: [urlToIndex] }),
+        body: JSON.stringify({ urls: selectedUrls }),
       });
 
-      if (!response.ok) throw new Error('Failed to submit URL for indexing');
+      if (!response.ok) throw new Error('Failed to submit URLs for indexing');
       
       const result = await response.json();
       await loadIndexingHistory();
-      setUrlToIndex('');
-      toast.success('URL submitted for indexing');
+      setSelectedUrls([]);
+      alert(`Successfully submitted ${selectedUrls.length} URLs for indexing`);
     } catch (err) {
-      toast.error('Failed to submit URL for indexing');
+      alert('Failed to submit URLs for indexing');
     } finally {
       setLoading(false);
     }
@@ -162,9 +222,9 @@ export function SEODashboard() {
       if (!response.ok) throw new Error('Failed to generate sitemap');
       
       await checkSitemapStatus();
-      toast.success('Sitemap generated successfully');
+      alert('Sitemap generated successfully');
     } catch (err) {
-      toast.error('Failed to generate sitemap');
+      alert('Failed to generate sitemap');
     } finally {
       setLoading(false);
     }
@@ -215,10 +275,12 @@ export function SEODashboard() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Meta Title
-                    <Input
+                    <input
+                      type="text"
                       value={currentSettings.title}
-                      onChange={(e) => handleChange('title', e.target.value)}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => handleChange('title', e.target.value)}
                       placeholder="Enter meta title"
+                      className="w-full p-2 border rounded"
                     />
                   </label>
                 </div>
@@ -226,11 +288,12 @@ export function SEODashboard() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Meta Description
-                    <Textarea
+                    <textarea
                       value={currentSettings.description}
-                      onChange={(e) => handleChange('description', e.target.value)}
+                      onChange={(e: ChangeEvent<HTMLTextAreaElement>) => handleChange('description', e.target.value)}
                       rows={4}
                       placeholder="Enter meta description"
+                      className="w-full p-2 border rounded"
                     />
                   </label>
                 </div>
@@ -238,10 +301,12 @@ export function SEODashboard() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Keywords
-                    <Input
+                    <input
+                      type="text"
                       value={currentSettings.keywords || ''}
-                      onChange={(e) => handleChange('keywords', e.target.value)}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => handleChange('keywords', e.target.value)}
                       placeholder="Enter keywords (comma-separated)"
+                      className="w-full p-2 border rounded"
                     />
                   </label>
                 </div>
@@ -249,10 +314,12 @@ export function SEODashboard() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Open Graph Title
-                    <Input
+                    <input
+                      type="text"
                       value={currentSettings.ogTitle || ''}
-                      onChange={(e) => handleChange('ogTitle', e.target.value)}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => handleChange('ogTitle', e.target.value)}
                       placeholder="Enter Open Graph title"
+                      className="w-full p-2 border rounded"
                     />
                   </label>
                 </div>
@@ -260,11 +327,12 @@ export function SEODashboard() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Open Graph Description
-                    <Textarea
+                    <textarea
                       value={currentSettings.ogDescription || ''}
-                      onChange={(e) => handleChange('ogDescription', e.target.value)}
+                      onChange={(e: ChangeEvent<HTMLTextAreaElement>) => handleChange('ogDescription', e.target.value)}
                       rows={4}
                       placeholder="Enter Open Graph description"
+                      className="w-full p-2 border rounded"
                     />
                   </label>
                 </div>
@@ -272,7 +340,7 @@ export function SEODashboard() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Open Graph Image URL
-                    <Input
+                    <input
                       value={currentSettings.ogImage || ''}
                       onChange={(e) => handleChange('ogImage', e.target.value)}
                       placeholder="Enter Open Graph image URL"
@@ -300,23 +368,52 @@ export function SEODashboard() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex gap-4">
-                <Input
-                  value={urlToIndex}
-                  onChange={(e) => setUrlToIndex(e.target.value)}
-                  placeholder="Enter URL to index"
-                  className="flex-1"
-                />
-                <Button onClick={handleSubmitUrl} disabled={loading || !urlToIndex}>
-                  Submit URL
-                </Button>
+                <button
+                  onClick={fetchAllUrls}
+                  disabled={fetchingUrls}
+                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
+                >
+                  {fetchingUrls ? 'Fetching URLs...' : 'Fetch All URLs'}
+                </button>
+                <button
+                  onClick={handleSelectAll}
+                  disabled={urls.length === 0}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {urls.length === selectedUrls.length ? 'Deselect All' : 'Select All'}
+                </button>
+                <button
+                  onClick={handleIndexSelected}
+                  disabled={selectedUrls.length === 0 || loading}
+                  className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 disabled:opacity-50"
+                >
+                  {loading ? 'Indexing...' : `Index Selected (${selectedUrls.length})`}
+                </button>
               </div>
 
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Recent Indexing Results</h3>
+              <div className="border rounded-lg p-4">
+                <h3 className="font-semibold mb-4">Available URLs ({urls.length})</h3>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {urls.map((url, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedUrls.includes(url)}
+                        onChange={() => handleUrlSelect(url)}
+                        className="h-4 w-4"
+                      />
+                      <span className="text-sm">{url}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <h3 className="font-semibold mb-4">Recent Indexing Results</h3>
                 <div className="space-y-2">
                   {indexingResults.map((result, index) => (
-                    <div key={index} className={`p-4 rounded-lg ${result.status === 'success' ? 'bg-green-50' : 'bg-red-50'}`}>
-                      <p className="font-medium">{result.url}</p>
+                    <div key={index} className={`p-4 border rounded ${result.status === 'success' ? 'border-green-500' : 'border-red-500'}`}>
+                      <p>{result.url}</p>
                       <p className="text-sm text-gray-600">{result.message}</p>
                       <p className="text-xs text-gray-500">{result.timestamp}</p>
                     </div>
