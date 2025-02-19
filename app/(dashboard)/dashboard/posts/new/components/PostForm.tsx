@@ -44,6 +44,7 @@ export default function PostForm() {
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCategories();
@@ -114,11 +115,8 @@ export default function PostForm() {
           throw new Error('Failed to get upload URL');
         }
 
-        // Set the thumbnail URL in a hidden input
-        const thumbnailInput = document.querySelector('input[name="thumbnail"]') as HTMLInputElement;
-        if (thumbnailInput) {
-          thumbnailInput.value = data.url;
-        }
+        // Store the thumbnail URL in state
+        setThumbnailUrl(data.url);
 
       } catch (error) {
         console.error('Error uploading thumbnail:', error);
@@ -171,82 +169,52 @@ export default function PostForm() {
     setLoading(true);
 
     try {
-      const form = e.currentTarget;
-      const formData = new FormData(form);
+      const formData = new FormData(e.currentTarget);
       
-      // Get the thumbnail file
-      const thumbnailFile = formData.get('thumbnail') as File | null;
-      
-      let thumbnailUrl = null;
-      if (thumbnailFile && thumbnailFile.size > 0) {
-        // Create a new FormData for the file upload
-        const fileFormData = new FormData();
-        fileFormData.append('thumbnail', thumbnailFile);
-
-        try {
-          const uploadResponse = await fetch('/api/upload', {
-            method: 'POST',
-            body: fileFormData,
-          });
-          
-          if (!uploadResponse.ok) {
-            throw new Error('Failed to upload thumbnail');
-          }
-          
-          const uploadData = await uploadResponse.json();
-          thumbnailUrl = uploadData.url;
-        } catch (uploadError) {
-          console.error('Error uploading thumbnail:', uploadError);
-          throw new Error('Failed to upload thumbnail');
-        }
-      }
-
-      // Prepare the post data
       const postData = {
-        title: formData.get('title')?.toString(),
-        slug: formData.get('slug')?.toString(),
-        content,
-        excerpt: formData.get('excerpt')?.toString(),
-        categoryId: formData.get('categoryId')?.toString(),
-        subcategoryId: formData.get('subcategoryId')?.toString() || undefined,
-        tags,
-        seoTitle: formData.get('seoTitle')?.toString() || undefined,
-        seoDescription: formData.get('seoDescription')?.toString() || undefined,
-        seoKeywords: formData.get('seoKeywords')?.toString() || undefined,
-        published: form.querySelector<HTMLInputElement>('input[name="published"]')?.checked || false,
-        thumbnail: thumbnailUrl,
+        title: formData.get('title'),
+        slug: formData.get('slug'),
+        content: content,
+        excerpt: formData.get('excerpt'),
+        categoryId: formData.get('categoryId'),
+        subcategoryId: formData.get('subcategoryId') || undefined,
+        tags: tags,
+        seoTitle: formData.get('seoTitle'),
+        seoDescription: formData.get('seoDescription'),
+        seoKeywords: formData.get('seoKeywords'),
+        published: formData.get('published') === 'on',
+        thumbnail: thumbnailUrl, // Use the stored thumbnail URL
       };
-
-      // Remove empty fields
-      const cleanedPostData = Object.fromEntries(
-        Object.entries(postData).filter(([_, value]) => 
-          value !== '' && value !== null && value !== undefined
-        )
-      );
-
-      // Log data for debugging
-      console.log('Post data being sent:', cleanedPostData);
 
       const response = await fetch('/api/posts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(cleanedPostData),
+        body: JSON.stringify(postData),
+        credentials: 'include',
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || errorData.details || 'Failed to create post');
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create post');
       }
 
       const data = await response.json();
-      console.log('Response received:', data);
-
-      router.push('/dashboard/posts');
+      
+      if (data.success) {
+        toast.success('Post created successfully');
+        router.push('/dashboard/posts');
+      } else {
+        throw new Error('Failed to create post');
+      }
     } catch (err) {
       console.error('Error submitting form:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred while creating the post');
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      toast.error('Failed to create post', {
+        description: err instanceof Error ? err.message : 'An error occurred',
+        duration: 3000,
+      });
     } finally {
       setLoading(false);
     }
@@ -357,7 +325,7 @@ export default function PostForm() {
           </label>
           <input
             type="file"
-            name="thumbnail"
+            name="thumbnail-file"
             id="thumbnail"
             accept="image/*"
             onChange={handleImageChange}
@@ -377,6 +345,11 @@ export default function PostForm() {
               />
             </div>
           )}
+          <input
+            type="hidden"
+            name="thumbnail"
+            value={thumbnailUrl || ''}
+          />
         </div>
 
         <div>
