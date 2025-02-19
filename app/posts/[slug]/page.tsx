@@ -27,6 +27,9 @@ interface Post {
     title: string;
     slug: string;
   };
+  author: {
+    name: string;
+  };
 }
 
 interface RelatedPost {
@@ -43,42 +46,56 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     where: {
       slug: params.slug,
     },
-    select: {
-      title: true,
-      excerpt: true,
-      seoTitle: true,
-      seoDescription: true,
-      seoKeywords: true,
-      thumbnail: true,
-    },
+    include: {
+      author: {
+        select: {
+          name: true
+        }
+      },
+      category: {
+        select: {
+          title: true
+        }
+      }
+    }
   });
 
   if (!post) {
     return {
       title: 'Post Not Found',
       description: 'The requested post could not be found.',
-      robots: { index: false, follow: false },
+      robots: { index: false, follow: false }
     };
   }
 
   const title = post.seoTitle || post.title;
+  const description = post.seoDescription || post.excerpt || `Read ${post.title} by ${post.author.name}`;
+  const keywords = post.seoKeywords || `${post.category.title}, spa, wellness, ${post.title}`;
 
   return {
     title: title,
-    description: post.seoDescription || post.excerpt || undefined,
-    keywords: post.seoKeywords || undefined,
+    description: description,
+    keywords: keywords,
     openGraph: {
-      title,
-      description: post.seoDescription || post.excerpt || undefined,
+      title: title,
+      description: description,
       type: 'article',
-      images: post.thumbnail ? [{ url: post.thumbnail }] : undefined,
+      publishedTime: post.createdAt.toISOString(),
+      images: post.thumbnail ? [
+        {
+          url: post.thumbnail,
+          width: 1200,
+          height: 630,
+          alt: title
+        }
+      ] : undefined
     },
     twitter: {
       card: 'summary_large_image',
-      title,
-      description: post.seoDescription || post.excerpt || undefined,
-      images: post.thumbnail ? [post.thumbnail] : undefined,
-    },
+      title: title,
+      description: description,
+      images: post.thumbnail && typeof post.thumbnail === 'string' ? [post.thumbnail] : undefined
+    }
   };
 }
 
@@ -128,6 +145,11 @@ export default async function PostPage({ params }: { params: { slug: string } })
           slug: true,
         },
       },
+      author: {
+        select: {
+          name: true
+        }
+      }
     },
   });
 

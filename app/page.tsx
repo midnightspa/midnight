@@ -6,6 +6,8 @@ import { PrismaClient } from '@prisma/client';
 import { generateMetadata as generateSiteMetadata, generateStructuredData, getSiteSettings } from '@/lib/seo';
 import MobileHero from '@/app/components/MobileHero';
 import ImageWithFallback from '@/app/components/ImageWithFallback';
+import { Metadata } from 'next';
+import Script from 'next/script';
 
 const prisma = new PrismaClient();
 
@@ -106,8 +108,12 @@ async function getLatestVideos() {
   });
 }
 
-export async function generateMetadata() {
-  return generateSiteMetadata(); // This will use default site settings
+export async function generateMetadata(): Promise<Metadata> {
+  return generateSiteMetadata(
+    'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness',
+    'Discover luxury spa treatments, wellness tips, and relaxation techniques at Midnight Spa. Expert guides, personalized services, and a tranquil atmosphere for your ultimate wellness journey.',
+    `${process.env.NEXT_PUBLIC_BASE_URL}/images/og-image.jpg`
+  );
 }
 
 export default async function HomePage() {
@@ -168,7 +174,12 @@ export default async function HomePage() {
           description: true,
           youtubeUrl: true,
           createdAt: true,
-          slug: true
+          slug: true,
+          author: {
+            select: {
+              name: true
+            }
+          }
         }
       }),
     ]);
@@ -189,13 +200,20 @@ export default async function HomePage() {
       return url.startsWith('/') ? url : `/${url}`;
     };
 
+    const structuredData = generateStructuredData({
+      organizationName: settings?.organizationName || undefined,
+      organizationLogo: settings?.organizationLogo || undefined,
+      contactPhone: settings?.contactPhone || undefined,
+      contactEmail: settings?.contactEmail || undefined,
+      contactAddress: settings?.contactAddress || undefined
+    });
+
     return (
       <>
-        <script
+        <Script
+          id="structured-data"
           type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(generateStructuredData(settings as any))
-          }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
         <div className={`min-h-screen bg-white ${poppins.className}`}>
           {/* Hero Section with Enhanced Design */}
@@ -375,34 +393,25 @@ export default async function HomePage() {
                             className="object-cover"
                             placeholder="blur"
                             blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
-                            loading="lazy"
                           />
-                          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                            <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center transform group-hover:scale-110 transition-transform">
-                              <svg className="w-8 h-8 text-neutral-900" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M6.3 2.841A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                              </svg>
-                            </div>
-                          </div>
                         </div>
-                        <div className="p-6">
-                          <h3 className="text-xl font-semibold text-neutral-900 mb-2 group-hover:text-neutral-700">
+                        <div className="p-4">
+                          <h3 className="text-lg font-semibold text-neutral-900 mb-2 line-clamp-2">
                             {video.title}
                           </h3>
-                          <p className="text-neutral-600 mb-4 line-clamp-2">
-                            {video.description}
-                          </p>
-                          <div className="flex items-center justify-between text-sm text-neutral-500">
-                            <time dateTime={new Date(video.createdAt).toISOString()}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-neutral-200"></div>
+                              <span className="text-sm text-neutral-600">
+                                {video.author.name}
+                              </span>
+                            </div>
+                            <time className="text-sm text-neutral-500" dateTime={new Date(video.createdAt).toISOString()}>
                               {new Date(video.createdAt).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
+                                month: 'short',
                                 day: 'numeric'
                               })}
                             </time>
-                            <span className="text-neutral-900 font-medium group-hover:translate-x-1 transition-transform">
-                              Watch Now →
-                            </span>
                           </div>
                         </div>
                       </div>
@@ -412,143 +421,11 @@ export default async function HomePage() {
               </div>
             </section>
           )}
-
-          {/* Main Content Grid with Sidebar */}
-          <section className="py-20 bg-white">
-            <div className="container mx-auto px-4">
-              <div className="flex justify-between items-end mb-12">
-                <div>
-                  <span className="text-sm font-medium text-neutral-500 uppercase tracking-wider">Latest Updates</span>
-                  <h2 className="text-3xl font-semibold text-neutral-900 mt-1">From The Blog</h2>
-                </div>
-              </div>
-              <div className="grid grid-cols-12 gap-8">
-                {/* Main Content Area (9 columns) */}
-                <div className="col-span-12 lg:col-span-9">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {posts.map((post, index) => (
-                      <div
-                        key={post.id}
-                        className="bg-white rounded-xl overflow-hidden shadow hover:shadow-lg transition-all duration-300"
-                      >
-                        <Link href={`/posts/${post.slug}`} className="block">
-                          <div className="relative h-48">
-                            <ImageWithFallback
-                              src={getImageUrl(post.thumbnail)}
-                              alt={post.title}
-                              fill
-                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                              className="object-cover"
-                              placeholder="blur"
-                              blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
-                              priority={index < 2}
-                            />
-                          </div>
-                          <div className="p-6">
-                            {post.subcategory && (
-                              <span className="text-sm font-medium text-blue-600 mb-2 block">
-                                {post.subcategory.title}
-                              </span>
-                            )}
-                            <h2 className="text-xl font-semibold text-neutral-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                              {post.title}
-                            </h2>
-                            <p className="text-neutral-600 mb-4 line-clamp-2">
-                              {post.excerpt}
-                            </p>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-neutral-200"></div>
-                                <span className="text-sm text-neutral-600">
-                                  {post.author.name}
-                                </span>
-                              </div>
-                              <span className="text-neutral-900 font-medium hover:text-blue-600 transition-colors">
-                                Read More →
-                              </span>
-                            </div>
-                          </div>
-                        </Link>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Sidebar (3 columns) */}
-                <div className="col-span-12 lg:col-span-3 space-y-8">
-                  {/* Search */}
-                  <div className="bg-neutral-50 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-neutral-900 mb-4">Search</h3>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Search posts..."
-                        className="w-full px-4 py-2 rounded-lg border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-neutral-900"
-                      />
-                      <svg className="w-5 h-5 absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                    </div>
-                  </div>
-
-                  {/* Popular Posts */}
-                  <div className="bg-neutral-50 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-neutral-900 mb-4">Popular Posts</h3>
-                    <div className="space-y-4">
-                      {posts.slice(0, 3).map((post) => (
-                        <Link key={post.id} href={`/posts/${post.id}`} className="flex gap-4 group">
-                          <div className="w-20 h-20 relative rounded-lg overflow-hidden flex-shrink-0">
-                            <ImageWithFallback
-                              src={getImageUrl(post.thumbnail)}
-                              alt={post.title}
-                              fill
-                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                              className="object-cover group-hover:scale-110 transition-transform duration-300"
-                              placeholder="blur"
-                              blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
-                              loading="lazy"
-                            />
-                          </div>
-                          <div>
-                            <h4 className="text-neutral-900 font-medium line-clamp-2 group-hover:text-neutral-700">
-                              {post.title}
-                            </h4>
-                            <span className="text-sm text-neutral-500">
-                              {new Date(post.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Categories */}
-                  <div className="bg-neutral-50 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-neutral-900 mb-4">Categories</h3>
-                    <div className="space-y-2">
-                      {categories.slice(0, 4).map((category) => (
-                        <Link
-                          key={category.id}
-                          href={`/categories/${category.slug}`}
-                          className="flex items-center justify-between py-2 text-neutral-600 hover:text-neutral-900"
-                        >
-                          <span>{category.title}</span>
-                          <span className="text-sm text-neutral-500">
-                            ({category.subcategories.length})
-                          </span>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
         </div>
       </>
     );
   } catch (error) {
-    console.error('Error fetching data:', error);
+    console.error('Error in HomePage:', error);
     throw error;
   } finally {
     await prisma.$disconnect();

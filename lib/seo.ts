@@ -1,76 +1,79 @@
 import { Metadata } from 'next';
+import prisma from './prisma';
 
 export async function getSiteSettings() {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/settings`, {
-      next: { revalidate: 3600 },
-    });
-    if (!response.ok) {
-      throw new Error('Failed to fetch site settings');
-    }
-    return response.json();
-  } catch (error) {
-    console.error('Error fetching site settings:', error);
-    return null;
-  }
+  const settings = await prisma.siteSettings.findFirst();
+  return settings;
 }
 
-export function generateStructuredData(settings: any) {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: settings?.siteName || '',
-    description: settings?.siteDescription || '',
-    url: process.env.NEXT_PUBLIC_BASE_URL,
-    logo: `${process.env.NEXT_PUBLIC_BASE_URL}/logo.png`,
-  };
-}
-
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata(
+  pageTitle?: string,
+  pageDescription?: string,
+  pageImage?: string
+): Promise<Metadata> {
   const settings = await getSiteSettings();
+  
+  const title = pageTitle || settings?.siteTitle || 'Midnight Spa';
+  const description = pageDescription || settings?.siteDescription || 'Your ultimate destination for relaxation and wellness';
+  const image = pageImage || settings?.ogImage || '/images/default-og.jpg';
 
   return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
     title: {
-      default: settings?.siteName || '',
-      template: `%s | ${settings?.siteName || ''}`,
+      template: `%s | ${settings?.siteName || 'Midnight Spa'}`,
+      default: title
     },
-    description: settings?.siteDescription || '',
-    keywords: settings?.siteKeywords?.split(',').map((keyword: string) => keyword.trim()) || [],
-    metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || ''),
+    description,
+    keywords: settings?.siteKeywords?.split(',').map(k => k.trim()) || [],
     openGraph: {
-      title: settings?.siteName || '',
-      description: settings?.siteDescription || '',
-      url: process.env.NEXT_PUBLIC_BASE_URL,
-      siteName: settings?.siteName || '',
+      type: 'website',
+      title,
+      description,
       images: [
         {
-          url: `${process.env.NEXT_PUBLIC_BASE_URL}/logo.png`,
+          url: image,
           width: 1200,
           height: 630,
-        },
+          alt: title
+        }
       ],
-      locale: 'en_US',
-      type: 'website',
+      siteName: settings?.siteName || 'Midnight Spa'
     },
     twitter: {
       card: 'summary_large_image',
-      title: settings?.siteName || '',
-      description: settings?.siteDescription || '',
-      images: [`${process.env.NEXT_PUBLIC_BASE_URL}/logo.png`],
+      title,
+      description,
+      images: [image],
+      creator: settings?.twitterHandle || '@midnightspa'
     },
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        'max-video-preview': -1,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
-      },
-    },
-    verification: {
-      google: settings?.googleSiteVerification || '',
-    },
+    icons: {
+      icon: settings?.favicon || '/favicon.ico',
+      apple: '/apple-touch-icon.png',
+      shortcut: '/favicon-ico'
+    }
+  };
+}
+
+interface SiteSettings {
+  organizationName?: string;
+  organizationLogo?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  contactAddress?: string;
+}
+
+export function generateStructuredData(settings: SiteSettings) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": settings.organizationName || "Midnight Spa",
+    "logo": settings.organizationLogo || `${process.env.NEXT_PUBLIC_BASE_URL}/logo.png`,
+    "url": process.env.NEXT_PUBLIC_BASE_URL,
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": settings.contactPhone || "",
+      "email": settings.contactEmail || "",
+      "address": settings.contactAddress || ""
+    }
   };
 } 

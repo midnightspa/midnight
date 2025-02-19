@@ -185,28 +185,23 @@ model Bundle {
 }
 
 model SiteSettings {
-  id                     String   @id @default(cuid())
-  siteName               String?
-  siteTitle              String?
-  siteDescription        String?
-  siteKeywords           String?
-  ogTitle                String?
-  ogDescription          String?
-  ogImage                String?
-  twitterHandle          String?
-  twitterCardType        String?
-  organizationName       String?
-  organizationLogo       String?
-  contactEmail           String?
-  contactPhone           String?
-  contactAddress         String?
-  googleAnalyticsId      String?
-  googleSiteVerification String?
-  robotsTxt              String?
-  sitemapXml             String?
-  favicon                String?
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id              String   @id @default(cuid())
+  siteName        String?
+  siteTitle       String?
+  siteDescription String?
+  siteKeywords    String?
+  favicon         String?
+  ogImage         String?
+  twitterHandle   String?
+  organizationName String?
+  organizationLogo String?
+  contactPhone    String?
+  contactEmail    String?
+  contactAddress  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("site_settings")
 }
 
 model Subscriber {

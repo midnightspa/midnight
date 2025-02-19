@@ -5,52 +5,21 @@ import MainLayout from './components/MainLayout';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './contexts/AuthContext';
 import Script from 'next/script';
+import { generateMetadata as generateSiteMetadata } from '@/lib/seo';
 
 const poppins = Poppins({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
-  title: {
-    template: '%s | Midnight Spa',
-    default: 'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness'
-  },
-  description: 'Discover luxury spa treatments, wellness tips, and relaxation techniques at Midnight Spa. Expert guides, personalized services, and a tranquil atmosphere for your ultimate wellness journey.',
-  keywords: 'spa, wellness, relaxation, massage, treatments, luxury spa, wellness center, self-care, beauty treatments, spa services',
-  icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' }
-    ],
-    apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
-    ]
-  },
-  manifest: '/site.webmanifest',
-  openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    url: process.env.NEXT_PUBLIC_BASE_URL,
-    title: 'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness',
-    description: 'Discover luxury spa treatments, wellness tips, and relaxation techniques at Midnight Spa. Expert guides, personalized services, and a tranquil atmosphere for your ultimate wellness journey.',
-    siteName: 'Midnight Spa',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness',
-    description: 'Discover luxury spa treatments, wellness tips, and relaxation techniques at Midnight Spa. Expert guides, personalized services, and a tranquil atmosphere.',
-    creator: '@midnightspa',
-  },
-  other: {
-    'msapplication-TileColor': '#ffffff'
-  }
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generateSiteMetadata();
+}
 
 export const viewport = {
   themeColor: '#ffffff',
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({

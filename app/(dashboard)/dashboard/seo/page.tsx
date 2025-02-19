@@ -1,10 +1,12 @@
-import { Metadata } from 'next';
+import { generateMetadata as generateSiteMetadata } from '@/lib/seo';
 import { SEODashboard } from './components/SEODashboard';
 
-export const metadata: Metadata = {
-  title: 'SEO Dashboard - Midnight Spa',
-  description: 'Manage your website\'s SEO settings and monitor performance',
-};
+export async function generateMetadata() {
+  return generateSiteMetadata(
+    'SEO Dashboard - Midnight Spa',
+    'Manage your website\'s SEO settings and monitor performance'
+  );
+}
 
 export default function Page() {
   return <SEODashboard />;

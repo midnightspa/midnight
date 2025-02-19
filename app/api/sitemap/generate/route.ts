@@ -31,9 +31,6 @@ async function getAllUrls() {
 
   const urls = [
     baseUrl,
-    `${baseUrl}/about`,
-    `${baseUrl}/contact`,
-    `${baseUrl}/services`,
     `${baseUrl}/blog`,
     `${baseUrl}/videos`,
     `${baseUrl}/shop`,
@@ -44,7 +41,7 @@ async function getAllUrls() {
     ...subcategories.map(subcategory => `${baseUrl}/subcategories/${subcategory.slug}`),
   ];
 
-  return Array.from(new Set(urls)); // Convert Set to Array
+  return Array.from(new Set(urls)); // Remove duplicates
 }
 
 function generateSitemapXml(urls: string[]) {
