@@ -23,6 +23,12 @@ interface IndexingResult {
   timestamp: string;
 }
 
+interface UrlCategory {
+  name: string;
+  type: 'posts' | 'videos' | 'products' | 'categories' | 'static';
+  urls: string[];
+}
+
 export function SEODashboard() {
   const [settings, setSettings] = useState<SeoSettings[]>([]);
   const [loading, setLoading] = useState(false);
@@ -40,6 +46,10 @@ export function SEODashboard() {
   const [indexingResults, setIndexingResults] = useState<IndexingResult[]>([]);
   const [sitemapStatus, setSitemapStatus] = useState<{ lastUpdated: string; urlCount: number } | null>(null);
   const [activeTab, setActiveTab] = useState('static-pages');
+  const [urlCategories, setUrlCategories] = useState<UrlCategory[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionProgress, setSubmissionProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
 
   useEffect(() => {
     loadSettings();
@@ -128,44 +138,101 @@ export function SEODashboard() {
     }
   };
 
-  const fetchAllUrls = async () => {
+  const fetchUrlsByCategory = async (type: UrlCategory['type']) => {
     try {
       setFetchingUrls(true);
-      const [postsRes, videosRes, productsRes] = await Promise.all([
-        fetch('/api/posts?published=true'),
-        fetch('/api/videos?published=true'),
-        fetch('/api/products?published=true')
-      ]);
-
-      const [posts, videos, products] = await Promise.all([
-        postsRes.json(),
-        videosRes.json(),
-        productsRes.json()
-      ]);
-
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themidnightspa.com';
-      
-      const allUrls = [
-        `${baseUrl}`,
-        `${baseUrl}/about`,
-        `${baseUrl}/contact`,
-        `${baseUrl}/services`,
-        `${baseUrl}/blog`,
-        `${baseUrl}/videos`,
-        `${baseUrl}/shop`,
-        ...posts.map((post: any) => `${baseUrl}/posts/${post.slug}`),
-        ...videos.map((video: any) => `${baseUrl}/videos/${video.slug}`),
-        ...products.map((product: any) => `${baseUrl}/shop/${product.slug}`)
-      ];
+      let fetchedUrls: string[] = [];
 
-      setUrls(allUrls);
-      alert(`Found ${allUrls.length} URLs`);
+      switch (type) {
+        case 'posts':
+          const postsRes = await fetch('/api/posts?published=true');
+          if (!postsRes.ok) throw new Error('Failed to fetch posts');
+          const posts = await postsRes.json();
+          fetchedUrls = posts.map((post: any) => `${baseUrl}/posts/${post.slug}`);
+          break;
+
+        case 'videos':
+          const videosRes = await fetch('/api/videos?published=true');
+          if (!videosRes.ok) throw new Error('Failed to fetch videos');
+          const videos = await videosRes.json();
+          fetchedUrls = videos.map((video: any) => `${baseUrl}/videos/${video.slug}`);
+          break;
+
+        case 'products':
+          const productsRes = await fetch('/api/products?published=true');
+          if (!productsRes.ok) throw new Error('Failed to fetch products');
+          const products = await productsRes.json();
+          fetchedUrls = products.map((product: any) => `${baseUrl}/shop/${product.slug}`);
+          break;
+
+        case 'categories':
+          const categoriesRes = await fetch('/api/categories');
+          if (!categoriesRes.ok) throw new Error('Failed to fetch categories');
+          const categories = await categoriesRes.json();
+          fetchedUrls = categories.map((category: any) => `${baseUrl}/categories/${category.slug}`);
+          break;
+
+        case 'static':
+          fetchedUrls = [
+            `${baseUrl}`,
+            `${baseUrl}/about`,
+            `${baseUrl}/contact`,
+            `${baseUrl}/services`,
+            `${baseUrl}/blog`,
+            `${baseUrl}/videos`,
+            `${baseUrl}/shop`,
+          ];
+          break;
+      }
+
+      const category: UrlCategory = {
+        name: type.charAt(0).toUpperCase() + type.slice(1),
+        type,
+        urls: fetchedUrls,
+      };
+
+      setUrlCategories(prev => {
+        const filtered = prev.filter(c => c.type !== type);
+        return [...filtered, category];
+      });
+
+      setSelectedCategory(type);
+      setUrls(fetchedUrls);
+      alert(`Found ${fetchedUrls.length} URLs for ${type}`);
     } catch (err) {
-      console.error('Error fetching URLs:', err);
-      alert('Failed to fetch URLs');
+      console.error(`Error fetching ${type} URLs:`, err);
+      alert(`Failed to fetch ${type} URLs`);
     } finally {
       setFetchingUrls(false);
     }
+  };
+
+  const submitUrlsInQueue = async (urls: string[]) => {
+    setIsSubmitting(true);
+    setSubmissionProgress({ current: 0, total: urls.length });
+
+    for (let i = 0; i < urls.length; i++) {
+      try {
+        const response = await fetch('/api/seo/index-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ urls: [urls[i]] }),
+        });
+
+        if (!response.ok) throw new Error(`Failed to submit URL: ${urls[i]}`);
+        
+        setSubmissionProgress(prev => ({ ...prev, current: i + 1 }));
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Add delay between submissions
+      } catch (err) {
+        console.error('Error submitting URL:', urls[i], err);
+      }
+    }
+
+    await loadIndexingHistory();
+    setSelectedUrls([]);
+    setIsSubmitting(false);
+    alert('Finished submitting URLs');
   };
 
   const handleUrlSelect = (url: string) => {
@@ -178,33 +245,6 @@ export function SEODashboard() {
 
   const handleSelectAll = () => {
     setSelectedUrls(urls.length === selectedUrls.length ? [] : [...urls]);
-  };
-
-  const handleIndexSelected = async () => {
-    if (selectedUrls.length === 0) {
-      alert('Please select URLs to index');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await fetch('/api/seo/index-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ urls: selectedUrls }),
-      });
-
-      if (!response.ok) throw new Error('Failed to submit URLs for indexing');
-      
-      const result = await response.json();
-      await loadIndexingHistory();
-      setSelectedUrls([]);
-      alert(`Successfully submitted ${selectedUrls.length} URLs for indexing`);
-    } catch (err) {
-      alert('Failed to submit URLs for indexing');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleGenerateSitemap = async () => {
@@ -375,46 +415,100 @@ export function SEODashboard() {
               <p className="text-gray-600">Submit URLs for indexing and monitor status</p>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-4">
               <button
-                onClick={fetchAllUrls}
+                onClick={() => fetchUrlsByCategory('static')}
+                disabled={fetchingUrls}
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
+              >
+                Fetch Static Pages
+              </button>
+              <button
+                onClick={() => fetchUrlsByCategory('posts')}
+                disabled={fetchingUrls}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+              >
+                Fetch Posts
+              </button>
+              <button
+                onClick={() => fetchUrlsByCategory('videos')}
+                disabled={fetchingUrls}
+                className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 disabled:opacity-50"
+              >
+                Fetch Videos
+              </button>
+              <button
+                onClick={() => fetchUrlsByCategory('products')}
                 disabled={fetchingUrls}
                 className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
               >
-                {fetchingUrls ? 'Fetching URLs...' : 'Fetch All URLs'}
+                Fetch Products
               </button>
               <button
-                onClick={handleSelectAll}
-                disabled={urls.length === 0}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                onClick={() => fetchUrlsByCategory('categories')}
+                disabled={fetchingUrls}
+                className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:opacity-50"
               >
-                {urls.length === selectedUrls.length ? 'Deselect All' : 'Select All'}
-              </button>
-              <button
-                onClick={handleIndexSelected}
-                disabled={selectedUrls.length === 0 || loading}
-                className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 disabled:opacity-50"
-              >
-                {loading ? 'Indexing...' : `Index Selected (${selectedUrls.length})`}
+                Fetch Categories
               </button>
             </div>
 
-            <div className="border rounded-lg p-4">
-              <h3 className="font-semibold mb-4">Available URLs ({urls.length})</h3>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {urls.map((url, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedUrls.includes(url)}
-                      onChange={() => handleUrlSelect(url)}
-                      className="h-4 w-4"
-                    />
-                    <span className="text-sm">{url}</span>
-                  </div>
-                ))}
+            {urlCategories.length > 0 && (
+              <div className="flex gap-4 items-center">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => {
+                    setSelectedCategory(e.target.value);
+                    const category = urlCategories.find(c => c.type === e.target.value);
+                    if (category) setUrls(category.urls);
+                  }}
+                  className="flex-1 p-2 border rounded"
+                >
+                  <option value="">Select URL Category</option>
+                  {urlCategories.map(category => (
+                    <option key={category.type} value={category.type}>
+                      {category.name} ({category.urls.length} URLs)
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleSelectAll}
+                  disabled={urls.length === 0}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {urls.length === selectedUrls.length ? 'Deselect All' : 'Select All'}
+                </button>
+                <button
+                  onClick={() => submitUrlsInQueue(selectedUrls)}
+                  disabled={selectedUrls.length === 0 || isSubmitting}
+                  className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 disabled:opacity-50"
+                >
+                  {isSubmitting 
+                    ? `Submitting (${submissionProgress.current}/${submissionProgress.total})`
+                    : `Submit Selected (${selectedUrls.length})`
+                  }
+                </button>
               </div>
-            </div>
+            )}
+
+            {urls.length > 0 && (
+              <div className="border rounded-lg p-4">
+                <h3 className="font-semibold mb-4">Available URLs ({urls.length})</h3>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {urls.map((url, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedUrls.includes(url)}
+                        onChange={() => handleUrlSelect(url)}
+                        className="h-4 w-4"
+                      />
+                      <span className="text-sm">{url}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mt-8">
               <h3 className="font-semibold mb-4">Recent Indexing Results</h3>
