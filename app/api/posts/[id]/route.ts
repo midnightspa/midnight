@@ -106,10 +106,37 @@ export async function PATCH(
       }
     });
 
+    // Trigger revalidation for affected pages
+    const paths = [
+      `/posts/${updatedPost.slug}`,
+      '/posts',
+      '/',
+      '/archive',
+      `/categories/${updatedPost.categoryId}`,
+    ];
+
+    // Revalidate all affected paths
+    await Promise.all(paths.map(async (path) => {
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/revalidate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            path,
+            tag: `post-${updatedPost.id}`
+          })
+        });
+      } catch (error) {
+        console.error(`Failed to revalidate path: ${path}`, error);
+      }
+    }));
+
     // If publish status changed and the post is now published, submit to Google indexing
     if (data.published === true && !currentPost.published) {
       try {
-        const url = `https://themidnightspa.com/posts/${currentPost.slug}`;
+        const url = `${process.env.NEXT_PUBLIC_BASE_URL}/posts/${currentPost.slug}`;
         await submitUrlToIndex(url);
         
         // Log the indexing request
@@ -123,7 +150,6 @@ export async function PATCH(
         });
       } catch (indexError) {
         console.error('Error submitting to Google indexing:', indexError);
-        // Don't throw the error as the post update was successful
       }
     }
 

@@ -87,9 +87,36 @@ export async function POST(req: Request) {
       },
     });
 
+    // Trigger revalidation for affected pages
+    const paths = [
+      `/posts/${post.slug}`,
+      '/posts',
+      '/',
+      '/archive',
+      `/categories/${post.categoryId}`,
+    ];
+
+    // Revalidate all affected paths
+    await Promise.all(paths.map(async (path) => {
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/revalidate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            path,
+            tag: `post-${post.id}`
+          })
+        });
+      } catch (error) {
+        console.error(`Failed to revalidate path: ${path}`, error);
+      }
+    }));
+
     // If the post is published, submit it to Google Search Console
     if (post.published) {
-      const url = `https://themidnightspa.com/posts/${post.slug}`;
+      const url = `${process.env.NEXT_PUBLIC_BASE_URL}/posts/${post.slug}`;
       await submitUrlToIndex(url);
       
       // Log the indexing request

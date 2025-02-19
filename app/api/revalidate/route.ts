@@ -1,27 +1,29 @@
-import { NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/auth.config';
+import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath, revalidateTag } from 'next/cache';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { path, tag } = await request.json();
+
+    if (path) {
+      revalidatePath(path);
     }
 
-    const { searchParams } = new URL(request.url);
-    const path = searchParams.get('path');
-
-    if (!path) {
-      return NextResponse.json({ error: 'Path parameter is required' }, { status: 400 });
+    if (tag) {
+      revalidateTag(tag);
     }
 
-    revalidatePath(path);
-    
-    return NextResponse.json({ revalidated: true, now: Date.now() });
+    return NextResponse.json({
+      revalidated: true,
+      now: Date.now(),
+      path,
+      tag
+    });
   } catch (error) {
-    console.error('[REVALIDATE]', error);
-    return NextResponse.json({ error: 'Error revalidating' }, { status: 500 });
+    return NextResponse.json({
+      revalidated: false,
+      now: Date.now(),
+      error: 'Failed to revalidate'
+    }, { status: 500 });
   }
 } 
