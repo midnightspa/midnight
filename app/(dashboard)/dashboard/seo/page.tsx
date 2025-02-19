@@ -1,25 +1,21 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Metadata } from 'next';
-import MetaTagsAnalyzer from './components/MetaTagsAnalyzer';
-import SitemapManager from './components/SitemapManager';
-import SeoStats from './components/SeoStats';
-import IndexingManager from './components/IndexingManager';
-import StaticPagesSeo from './components/StaticPagesSeo';
-
-interface SeoSettings {
-  path: string;
-  title: string;
-  description: string;
-  keywords: string;
-}
 
 export const metadata: Metadata = {
   title: 'SEO Dashboard - Midnight Spa',
   description: 'Manage your website\'s SEO settings and monitor performance',
 };
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+
+interface SeoSettings {
+  metaTitle: string;
+  metaDescription: string;
+  keywords: string;
+}
 
 export default function SEODashboard() {
   const [settings, setSettings] = useState<SeoSettings[]>([]);
@@ -27,9 +23,8 @@ export default function SEODashboard() {
   const [error, setError] = useState<string | null>(null);
   const [selectedPage, setSelectedPage] = useState('/');
   const [currentSettings, setCurrentSettings] = useState<SeoSettings>({
-    path: '/',
-    title: '',
-    description: '',
+    metaTitle: '',
+    metaDescription: '',
     keywords: '',
   });
 
@@ -40,49 +35,27 @@ export default function SEODashboard() {
   const loadSettings = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/seo/static-pages');
-      if (!response.ok) throw new Error('Failed to load settings');
+      const response = await fetch('/api/seo');
+      if (!response.ok) throw new Error('Failed to load SEO settings');
       const data = await response.json();
       setSettings(data);
-      if (data.length > 0) {
-        setCurrentSettings(data[0]);
-      }
+      setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load settings');
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      toast.error('Failed to load SEO settings');
     } finally {
       setLoading(false);
     }
   };
 
   const handlePageSelect = (path: string) => {
-    const pageSettings = settings.find(s => s.path === path) || {
-      path,
-      title: '',
-      description: '',
+    const pageSettings = settings.find(s => s.metaTitle === path) || {
+      metaTitle: path,
+      metaDescription: '',
       keywords: '',
     };
     setSelectedPage(path);
     setCurrentSettings(pageSettings);
-  };
-
-  const handleSave = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/seo/static-pages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(currentSettings),
-      });
-      
-      if (!response.ok) throw new Error('Failed to save settings');
-      
-      await loadSettings();
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save settings');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleChange = (field: keyof SeoSettings, value: string) => {
@@ -92,96 +65,84 @@ export default function SEODashboard() {
     }));
   };
 
-  const pages = [
-    { path: '/', label: 'Home' },
-    { path: '/about', label: 'About' },
-    { path: '/services', label: 'Services' },
-    { path: '/contact', label: 'Contact' },
-    { path: '/blog', label: 'Blog' },
-    { path: '/categories', label: 'Categories' },
-    { path: '/videos', label: 'Videos' },
-  ];
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/seo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentSettings),
+      });
+      
+      if (!response.ok) throw new Error('Failed to save SEO settings');
+      
+      await loadSettings();
+      toast.success('SEO settings saved successfully');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      toast.error('Failed to save SEO settings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  if (error) return <div className="text-red-500">Error: {error}</div>;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">SEO Dashboard</h2>
-        <p className="text-muted-foreground">
-          Manage your website's SEO settings and monitor performance
-        </p>
-      </div>
-
-      <div className="grid gap-6">
-        <SeoStats />
-        <StaticPagesSeo />
-        <IndexingManager />
-        <MetaTagsAnalyzer />
-        <SitemapManager />
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-2xl font-semibold mb-4">SEO Management</h2>
-        
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-lg">
-            {error}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Page Selection */}
-          <div className="lg:col-span-1">
-            <h3 className="text-lg font-medium mb-4">Pages</h3>
-            <div className="space-y-2">
-              {pages.map(page => (
-                <button
-                  key={page.path}
-                  onClick={() => handlePageSelect(page.path)}
-                  className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
-                    selectedPage === page.path
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'hover:bg-gray-50'
-                  }`}
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">SEO Dashboard</h1>
+      
+      <div className="grid gap-8">
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4">Page SEO Settings</h2>
+          
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Page
+                <select
+                  value={selectedPage}
+                  onChange={(e) => handlePageSelect(e.target.value)}
+                  className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  {page.label}
-                </button>
-              ))}
+                  <option value="/">Home Page</option>
+                  <option value="/about">About Page</option>
+                  <option value="/services">Services Page</option>
+                  <option value="/contact">Contact Page</option>
+                </select>
+              </label>
             </div>
-          </div>
 
-          {/* Settings Form */}
-          <div className="lg:col-span-3">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Meta Title
-                </label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Meta Title
                 <input
                   type="text"
-                  value={currentSettings.title}
-                  onChange={(e) => handleChange('title', e.target.value)}
+                  value={currentSettings.metaTitle}
+                  onChange={(e) => handleChange('metaTitle', e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter meta title"
                 />
-              </div>
+              </label>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Meta Description
-                </label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Meta Description
                 <textarea
-                  value={currentSettings.description}
-                  onChange={(e) => handleChange('description', e.target.value)}
+                  value={currentSettings.metaDescription}
+                  onChange={(e) => handleChange('metaDescription', e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   rows={4}
                   placeholder="Enter meta description"
                 />
-              </div>
+              </label>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Keywords
-                </label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Keywords
                 <input
                   type="text"
                   value={currentSettings.keywords}
@@ -189,20 +150,16 @@ export default function SEODashboard() {
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter keywords (comma-separated)"
                 />
-              </div>
-
-              <div className="flex justify-end">
-                <button
-                  onClick={handleSave}
-                  disabled={loading}
-                  className={`px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
-                    loading ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  {loading ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
+              </label>
             </div>
+
+            <button
+              onClick={handleSave}
+              disabled={loading}
+              className="w-full bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : 'Save Settings'}
+            </button>
           </div>
         </div>
       </div>
