@@ -60,6 +60,7 @@ export const authOptions: NextAuthOptions = {
   ],
   pages: {
     signIn: '/auth/signin',
+    error: '/auth/signin',
   },
   session: {
     strategy: 'jwt',
@@ -68,6 +69,7 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   jwt: {
     secret: process.env.NEXTAUTH_SECRET,
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -83,6 +85,18 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as string;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // Always redirect to dashboard after sign in
+      if (url.includes('/auth/signin')) {
+        return `${baseUrl}/dashboard`;
+      }
+      // If trying to access a protected page
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+      // Default fallback
+      return baseUrl;
     },
   },
 }; 

@@ -3,15 +3,14 @@
 import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function SignInForm() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
@@ -23,16 +22,30 @@ export default function SignInForm() {
         email,
         password,
         redirect: false,
+        callbackUrl: '/dashboard'
       });
 
       if (result?.error) {
-        setError('Invalid email or password');
+        toast.error('Invalid email or password', {
+          description: 'Please check your credentials and try again.',
+          duration: 3000,
+        });
       } else {
-        router.push('/');
-        router.refresh();
+        toast.success('Sign in successful', {
+          description: 'Welcome back!',
+          duration: 3000,
+        });
+        // Wait a bit for the session to be fully established
+        setTimeout(() => {
+          router.push('/dashboard');
+          router.refresh();
+        }, 100);
       }
     } catch (error) {
-      setError('An error occurred. Please try again.');
+      toast.error('An error occurred', {
+        description: 'Please try again later.',
+        duration: 3000,
+      });
     } finally {
       setLoading(false);
     }
@@ -40,12 +53,6 @@ export default function SignInForm() {
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit}>
-      {error && (
-        <div className="bg-red-50 p-4 rounded-md">
-          <p className="text-sm text-red-700">{error}</p>
-        </div>
-      )}
-
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-gray-700">
           Email address

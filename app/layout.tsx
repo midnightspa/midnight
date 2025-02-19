@@ -4,6 +4,7 @@ import { Poppins } from 'next/font/google';
 import MainLayout from './components/MainLayout';
 import { Toaster } from 'sonner';
 import Script from 'next/script';
+import { AuthProvider } from './contexts/AuthContext';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -81,8 +82,10 @@ export default function RootLayout({
             style={{ display: 'none', visibility: 'hidden' }}
           />
         </noscript>
-        <MainLayout>{children}</MainLayout>
-        <Toaster />
+        <AuthProvider>
+          <MainLayout>{children}</MainLayout>
+          <Toaster richColors position="top-right" />
+        </AuthProvider>
       </body>
     </html>
   );
