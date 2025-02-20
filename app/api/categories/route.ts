@@ -146,28 +146,32 @@ export async function POST(request: Request) {
   }
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const categories = await prisma.postCategory.findMany({
       include: {
-        subcategories: true,
+        subcategories: {
+          include: {
+            _count: {
+              select: {
+                posts: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        title: 'asc',
       },
     });
 
-    // Set cache control headers
-    return NextResponse.json(
-      categories,
-      {
-        headers: {
-          'Cache-Control': 'no-store',
-          'Surrogate-Control': 'no-store',
-        },
-      }
-    );
+    return NextResponse.json(categories);
   } catch (error) {
-    console.error('[CATEGORIES_GET]', error);
+    console.error('Error fetching categories:', error);
     return NextResponse.json(
-      { error: 'Internal error' },
+      { error: 'Failed to fetch categories' },
       { status: 500 }
     );
   }

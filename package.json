@@ -30,7 +30,7 @@
     "domhandler": "^5.0.3",
     "domutils": "^3.1.0",
     "entities": "^4.5.0",
-    "framer-motion": "^10.16.16",
+    "framer-motion": "^10.18.0",
     "google-auth-library": "^9.15.1",
     "htmlparser2": "^9.1.0",
     "lucide-react": "^0.475.0",
@@ -47,6 +47,7 @@
     "sharp": "^0.33.5",
     "sonner": "^1.2.4",
     "tailwind-merge": "^3.0.1",
+    "use-debounce": "^10.0.4",
     "xml2js": "^0.6.2",
     "zod": "^3.22.4"
   },

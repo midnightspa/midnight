@@ -1,13 +1,20 @@
 import { NextResponse } from 'next/server';
 import { writeFile } from 'fs/promises';
-import { join } from 'path';
-import { mkdir } from 'fs/promises';
+import path from 'path';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/auth.config';
+import fixPermissions from '@/scripts/fix-permissions';
 import sharp from 'sharp';
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const formData = await request.formData();
-    const file = formData.get('thumbnail') as File;
+    const file = formData.get('file') as File;
     
     if (!file) {
       console.error('No file received in request');
@@ -45,34 +52,20 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Create uploads directory if it doesn't exist
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
-    await mkdir(uploadDir, { recursive: true });
-
     // Generate unique filename
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-    const extension = 'webp'; // Always convert to WebP for better compression
-    const filename = `${uniqueSuffix}.${extension}`;
-    const filepath = join(uploadDir, filename);
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(7);
+    const filename = `${timestamp}-${randomString}-${file.name}`;
+    
+    // Ensure uploads directory exists
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    const filePath = path.join(uploadDir, filename);
 
-    console.log('Processing image...');
-
-    // Optimize image using Sharp
-    const optimizedImage = await sharp(buffer)
-      .webp({ quality: 80 }) // Convert to WebP with 80% quality
-      .resize({
-        width: 1200, // Max width
-        height: 800, // Max height
-        fit: 'inside', // Maintain aspect ratio
-        withoutEnlargement: true // Don't upscale small images
-      })
-      .toBuffer();
-
-    console.log('Writing optimized file to:', filepath);
-
-    // Write the optimized file
-    await writeFile(filepath, optimizedImage);
-    console.log('File written successfully');
+    // Write file
+    await writeFile(filePath, buffer);
+    
+    // Fix permissions after upload
+    await fixPermissions();
 
     // Return the public URL
     const url = `/uploads/${filename}`;
@@ -80,16 +73,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       success: true,
-      url: url
+      filename: url
     });
-    
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json(
-      { 
-        error: 'Failed to upload file',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Failed to upload file' },
       { status: 500 }
     );
   }
