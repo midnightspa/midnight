@@ -64,13 +64,17 @@ export async function POST(request: Request) {
     // Write file
     await writeFile(filePath, buffer);
     
-    // Return the public URL
+    // Return the public URL - ensure it starts with /uploads/
     const url = `/uploads/${filename}`;
-    console.log('Returning URL:', url);
+    console.log('File saved successfully:', {
+      path: filePath,
+      publicUrl: url
+    });
 
     return NextResponse.json({ 
       success: true,
-      filename: url
+      filename: url,
+      url // Adding url field for backward compatibility
     });
   } catch (error) {
     console.error('Upload error:', error);

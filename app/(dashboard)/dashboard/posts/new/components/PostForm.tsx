@@ -115,8 +115,11 @@ export default function PostForm() {
           throw new Error('Failed to get upload URL');
         }
 
-        // Store the thumbnail URL in state
-        setThumbnailUrl(data.filename);
+        // Store the thumbnail URL in state - ensure it starts with /uploads/
+        const thumbnailPath = data.filename.startsWith('/uploads/') 
+          ? data.filename 
+          : `/uploads/${data.filename.split('/uploads/').pop()}`;
+        setThumbnailUrl(thumbnailPath);
 
       } catch (error) {
         console.error('Error uploading thumbnail:', error);
