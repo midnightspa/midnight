@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { getImageUrl } from '@/lib/utils';
 
 interface Post {
   id: string;
@@ -13,7 +14,7 @@ interface Post {
   published: boolean;
   createdAt: string;
   updatedAt: string;
-  thumbnail?: string;
+  thumbnail: string | null;
 }
 
 const shimmer = (w: number, h: number) => `
@@ -152,7 +153,7 @@ export default function PostList() {
         >
           <div className="relative h-48 w-full bg-gray-100">
             <Image
-              src={post.thumbnail || '/placeholder.jpg'}
+              src={getImageUrl(post.thumbnail)}
               alt={post.title}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

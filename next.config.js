@@ -19,6 +19,7 @@ const nextConfig = {
         hostname: '5.161.86.130',
       }
     ],
+    domains: ['5.161.86.130', 'themidnightspa.com', 'localhost'],
     unoptimized: true,
   },
   eslint: {

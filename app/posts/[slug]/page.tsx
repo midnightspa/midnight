@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Poppins } from 'next/font/google';
 import prisma from '@/lib/prisma';
 import type { Metadata } from 'next';
+import { getImageUrl } from '@/lib/utils';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -231,7 +232,7 @@ export default async function PostPage({ params }: { params: { slug: string } })
         <div className="rounded-2xl overflow-hidden shadow-xl bg-white hover:shadow-2xl transition-shadow duration-300">
           <div className="w-full aspect-[21/9] relative">
             <Image
-              src={post.thumbnail || '/placeholder.jpg'}
+              src={getImageUrl(post.thumbnail)}
               alt={post.title}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
@@ -332,7 +333,7 @@ export default async function PostPage({ params }: { params: { slug: string } })
                         <div className="flex gap-4">
                           <div className="w-20 h-20 relative rounded-lg overflow-hidden flex-shrink-0">
                             <Image
-                              src={relatedPost.thumbnail || '/placeholder.jpg'}
+                              src={getImageUrl(relatedPost.thumbnail)}
                               alt={relatedPost.title}
                               fill
                               sizes="(max-width: 768px) 80px, 80px"
