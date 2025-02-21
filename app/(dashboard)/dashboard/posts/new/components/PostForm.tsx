@@ -98,7 +98,7 @@ export default function PostForm() {
 
         // Upload file
         const formData = new FormData();
-        formData.append('thumbnail', file);
+        formData.append('file', file);
 
         const response = await fetch('/api/upload', {
           method: 'POST',
@@ -111,12 +111,12 @@ export default function PostForm() {
         }
 
         const data = await response.json();
-        if (!data.success || !data.url) {
+        if (!data.success || !data.filename) {
           throw new Error('Failed to get upload URL');
         }
 
         // Store the thumbnail URL in state
-        setThumbnailUrl(data.url);
+        setThumbnailUrl(data.filename);
 
       } catch (error) {
         console.error('Error uploading thumbnail:', error);
