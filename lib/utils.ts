@@ -23,9 +23,6 @@ export function getImageUrl(url: string | null): string {
   // If it's already a full URL, return it
   if (url.startsWith('http')) return url;
   
-  // Get the server URL from environment or default to the production URL
-  const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'https://themidnightspa.com';
-  
   // Clean up the URL path
   const cleanPath = url.startsWith('/uploads/') 
     ? url 
@@ -33,12 +30,6 @@ export function getImageUrl(url: string | null): string {
       ? `/uploads/${url.split('/uploads/').pop()}`
       : `/uploads/${url}`;
   
-  // Always use full URL in production
-  if (process.env.NODE_ENV === 'production') {
-    // Remove any potential double slashes (except after http/https)
-    return `${serverUrl}${cleanPath}`.replace(/([^:]\/)\/+/g, '$1');
-  }
-  
-  // For development, use relative path
+  // Always return the clean path - Nginx will handle serving the files
   return cleanPath;
 } 
