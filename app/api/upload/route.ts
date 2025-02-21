@@ -1,8 +1,23 @@
 import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, chmod, chown } from 'fs/promises';
 import path from 'path';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/auth.config';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
+
+async function setFilePermissions(filePath: string) {
+  try {
+    // Set file permissions to 777
+    await chmod(filePath, 0o777);
+    // Set ownership to www-data (uid: 33, gid: 33 for www-data)
+    await execAsync(`chown www-data:www-data "${filePath}"`);
+  } catch (error) {
+    console.error('Error setting file permissions:', error);
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -63,6 +78,9 @@ export async function POST(request: Request) {
 
     // Write file
     await writeFile(filePath, buffer);
+    
+    // Set correct permissions and ownership
+    await setFilePermissions(filePath);
     
     // Return the public URL - ensure it starts with /uploads/
     const url = `/uploads/${filename}`;
