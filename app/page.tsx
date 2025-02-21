@@ -9,6 +9,7 @@ import ImageWithFallback from '@/app/components/ImageWithFallback';
 import { Metadata } from 'next';
 import Script from 'next/script';
 import SearchArticles from '@/app/components/SearchArticles';
+import WatchMoreButton from '@/app/components/WatchMoreButton';
 
 const prisma = new PrismaClient();
 
@@ -419,6 +420,7 @@ export default async function HomePage() {
                     </Link>
                   ))}
                 </div>
+                <WatchMoreButton />
               </div>
             </section>
           )}

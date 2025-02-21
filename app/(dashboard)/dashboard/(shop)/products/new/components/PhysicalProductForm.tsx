@@ -3,20 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import ProductBundle from './ProductBundle';
 
 interface Category {
   id: string;
   title: string;
-  slug: string;
 }
 
 interface Bundle {
-  id: string;
   title: string;
-  products: {
-    id: string;
-    title: string;
-  }[];
+  description: string;
+  price: number;
+  thumbnail: string | null;
 }
 
 export default function PhysicalProductForm() {
@@ -31,41 +29,17 @@ export default function PhysicalProductForm() {
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
 
   useEffect(() => {
-    fetchData();
+    fetchCategories();
   }, []);
 
-  const fetchData = async () => {
+  const fetchCategories = async () => {
     try {
-      const [categoriesRes] = await Promise.all([
-        fetch('/api/dashboard/products/categories'),
-      ]);
-
-      if (!categoriesRes.ok) throw new Error('Failed to fetch categories');
-
-      const [categoriesData] = await Promise.all([
-        categoriesRes.json(),
-      ]);
-
-      setCategories(categoriesData);
+      const response = await fetch('/api/dashboard/products/categories');
+      if (!response.ok) throw new Error('Failed to fetch categories');
+      const data = await response.json();
+      setCategories(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch data');
-    }
-  };
-
-  const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  };
-
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const form = e.target.form;
-    if (form) {
-      const slugInput = form.elements.namedItem('slug') as HTMLInputElement;
-      if (slugInput) {
-        slugInput.value = generateSlug(e.target.value);
-      }
+      setError(err instanceof Error ? err.message : 'Failed to fetch categories');
     }
   };
 
@@ -91,6 +65,14 @@ export default function PhysicalProductForm() {
     setGalleryPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleBundleAdd = (bundle: Bundle) => {
+    setBundles([...bundles, bundle]);
+  };
+
+  const removeBundle = (index: number) => {
+    setBundles(bundles.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
@@ -108,6 +90,9 @@ export default function PhysicalProductForm() {
         formData.append('gallery', file);
       });
 
+      // Add bundles to form data
+      formData.append('bundles', JSON.stringify(bundles));
+
       const response = await fetch('/api/dashboard/products', {
         method: 'POST',
         body: formData,
@@ -118,7 +103,6 @@ export default function PhysicalProductForm() {
         throw new Error(data.error || 'Failed to create product');
       }
 
-      const product = await response.json();
       router.push('/dashboard/products');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create product');
@@ -148,20 +132,6 @@ export default function PhysicalProductForm() {
               type="text"
               name="title"
               id="title"
-              required
-              onChange={handleTitleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="slug" className="block text-sm font-medium text-gray-700">
-              Slug
-            </label>
-            <input
-              type="text"
-              name="slug"
-              id="slug"
               required
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
@@ -216,25 +186,6 @@ export default function PhysicalProductForm() {
                 name="price"
                 id="price"
                 required
-                min="0"
-                step="0.01"
-                className="pl-7 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="salePrice" className="block text-sm font-medium text-gray-700">
-              Sale Price (Optional)
-            </label>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 sm:text-sm">$</span>
-              </div>
-              <input
-                type="number"
-                name="salePrice"
-                id="salePrice"
                 min="0"
                 step="0.01"
                 className="pl-7 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -343,44 +294,46 @@ export default function PhysicalProductForm() {
           </div>
         </div>
 
-        {/* SEO */}
+        {/* Bundles */}
         <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
-          <h2 className="text-lg font-medium text-gray-900">SEO</h2>
-          
-          <div>
-            <label htmlFor="seoTitle" className="block text-sm font-medium text-gray-700">
-              SEO Title
-            </label>
-            <input
-              type="text"
-              name="seoTitle"
-              id="seoTitle"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-medium text-gray-900">Product Bundles</h2>
+            <ProductBundle onBundleAdd={handleBundleAdd} products={[]} />
           </div>
 
-          <div>
-            <label htmlFor="seoDescription" className="block text-sm font-medium text-gray-700">
-              SEO Description
-            </label>
-            <textarea
-              name="seoDescription"
-              id="seoDescription"
-              rows={3}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="seoKeywords" className="block text-sm font-medium text-gray-700">
-              SEO Keywords
-            </label>
-            <input
-              type="text"
-              name="seoKeywords"
-              id="seoKeywords"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
+          <div className="mt-4 space-y-4">
+            {bundles.map((bundle, index) => (
+              <div key={index} className="bg-gray-50 p-4 rounded-lg flex items-start justify-between">
+                <div className="flex items-start space-x-4">
+                  {bundle.thumbnail && (
+                    <div className="relative w-20 h-20">
+                      <Image
+                        src={bundle.thumbnail}
+                        alt={bundle.title}
+                        fill
+                        className="object-cover rounded-md"
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="font-medium text-gray-900">{bundle.title}</h3>
+                    <p className="text-sm text-gray-500">{bundle.description}</p>
+                    <p className="text-sm font-medium text-gray-900 mt-1">
+                      ${bundle.price.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeBundle(index)}
+                  className="text-red-600 hover:text-red-800"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       </div>

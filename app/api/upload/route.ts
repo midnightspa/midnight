@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/auth.config';
-import fixPermissions from '@/scripts/fix-permissions';
-import sharp from 'sharp';
 
 export async function POST(request: Request) {
   try {
@@ -59,13 +57,15 @@ export async function POST(request: Request) {
     
     // Ensure uploads directory exists
     const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    await mkdir(uploadDir, { recursive: true });
+    
     const filePath = path.join(uploadDir, filename);
 
     // Write file
     await writeFile(filePath, buffer);
     
-    // Fix permissions after upload
-    await fixPermissions();
+    // Fix permissions through API call
+    await fetch('/api/system/fix-permissions', { method: 'POST' });
 
     // Return the public URL
     const url = `/uploads/${filename}`;

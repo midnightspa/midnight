@@ -5,7 +5,7 @@ import { authOptions } from '../api/auth/[...nextauth]/auth.config';
 import Link from 'next/link';
 import Image from 'next/image';
 import { signOut } from 'next-auth/react';
-import DashboardHeader from './components/DashboardHeader';
+import DashboardHeaderClient from './components/DashboardHeaderClient';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -62,7 +62,7 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <DashboardHeader user={session.user} />
+      <DashboardHeaderClient user={session.user} />
 
       {/* Sidebar */}
       <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg pt-24">

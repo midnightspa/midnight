@@ -8,18 +8,18 @@ datasource db {
 }
 
 model User {
-  id         String    @id @default(cuid())
-  email      String    @unique
-  password   String
-  name       String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  isApproved Boolean   @default(false)
-  role       Role      @default(PENDING)
-  posts      Post[]
-  products   Product[]
-  videos     Video[]
+  id              String           @id @default(cuid())
+  email           String           @unique
+  password        String
+  name            String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  isApproved      Boolean          @default(false)
+  role            Role             @default(PENDING)
+  posts           Post[]
+  products        Product[]
   seoIndexingLogs SeoIndexingLog[]
+  videos          Video[]
 }
 
 model PostCategory {
@@ -178,6 +178,7 @@ model Bundle {
   published   Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  file        String?
   includedIn  Product[] @relation("BundleIncludes")
   products    Product[] @relation("BundleProducts")
 
@@ -185,21 +186,21 @@ model Bundle {
 }
 
 model SiteSettings {
-  id              String   @id @default(cuid())
-  siteName        String?
-  siteTitle       String?
-  siteDescription String?
-  siteKeywords    String?
-  favicon         String?
-  ogImage         String?
-  twitterHandle   String?
+  id               String   @id @default(cuid())
+  siteName         String?
+  siteTitle        String?
+  siteDescription  String?
+  siteKeywords     String?
+  favicon          String?
+  ogImage          String?
+  twitterHandle    String?
   organizationName String?
   organizationLogo String?
-  contactPhone    String?
-  contactEmail    String?
-  contactAddress  String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  contactPhone     String?
+  contactEmail     String?
+  contactAddress   String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@map("site_settings")
 }
@@ -276,25 +277,25 @@ model SeoIndexingLog {
   type      String
   results   Json
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model StaticPageSeo {
-  id                  String   @id @default(cuid())
-  path                String   @unique
-  title               String?
-  description         String?
-  keywords            String?
-  ogTitle             String?
-  ogDescription       String?
-  ogImage             String?
-  twitterTitle        String?
-  twitterDescription  String?
-  twitterImage        String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  path               String   @unique
+  title              String?
+  description        String?
+  keywords           String?
+  ogTitle            String?
+  ogDescription      String?
+  ogImage            String?
+  twitterTitle       String?
+  twitterDescription String?
+  twitterImage       String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 enum ProductType {
