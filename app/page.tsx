@@ -11,7 +11,20 @@ import Script from 'next/script';
 import SearchArticles from '@/app/components/SearchArticles';
 import WatchMoreButton from '@/app/components/WatchMoreButton';
 
-const prisma = new PrismaClient();
+// Create a single PrismaClient instance
+let prisma: PrismaClient;
+
+if (process.env.NODE_ENV === 'production') {
+  prisma = new PrismaClient();
+} else {
+  // @ts-ignore
+  if (!global.prisma) {
+    // @ts-ignore
+    global.prisma = new PrismaClient();
+  }
+  // @ts-ignore
+  prisma = global.prisma;
+}
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -43,18 +56,19 @@ interface Post {
   excerpt: string;
   thumbnail: string | null;
   createdAt: string;
-  author: {
-    name: string;
-  };
+  tags: string[];
   slug: string;
   category: {
     title: string;
     slug: string;
-  };
+  } | null;
   subcategory: {
     title: string;
     slug: string;
   } | null;
+  author: {
+    name: string;
+  };
 }
 
 interface SubCategory {
@@ -91,23 +105,28 @@ const toBase64 = (str: string) =>
 const DEFAULT_THUMBNAIL = '/placeholder.jpg';
 
 async function getLatestVideos() {
-  return await prisma.video.findMany({
-    where: {
-      published: true,
-    },
-    orderBy: {
-      createdAt: 'desc'
-    },
-    take: 6,
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      youtubeUrl: true,
-      createdAt: true,
-      slug: true,
-    },
-  });
+  try {
+    return await prisma.video.findMany({
+      where: {
+        published: true,
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: 6,
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        youtubeUrl: true,
+        createdAt: true,
+        slug: true,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching latest videos:', error);
+    return [];
+  }
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -127,7 +146,7 @@ export default async function HomePage() {
         include: {
           subcategories: true,
         },
-      }),
+      }).catch(() => []),
       prisma.postSubCategory.findMany({
         include: {
           category: {
@@ -143,7 +162,7 @@ export default async function HomePage() {
             }
           }
         }
-      }),
+      }).catch(() => []),
       prisma.post.findMany({
         where: {
           published: true,
@@ -152,16 +171,33 @@ export default async function HomePage() {
           createdAt: 'desc',
         },
         take: 6,
-        include: {
-          category: true,
-          subcategory: true,
+        select: {
+          id: true,
+          title: true,
+          excerpt: true,
+          thumbnail: true,
+          createdAt: true,
+          slug: true,
+          tags: true,
+          category: {
+            select: {
+              title: true,
+              slug: true
+            }
+          },
+          subcategory: {
+            select: {
+              title: true,
+              slug: true
+            }
+          },
           author: {
             select: {
               name: true
             }
           }
-        },
-      }),
+        }
+      }).catch(() => []),
       prisma.video.findMany({
         where: {
           published: true,
@@ -183,7 +219,7 @@ export default async function HomePage() {
             }
           }
         }
-      }),
+      }).catch(() => []),
     ]);
 
     const getYouTubeThumbnail = (url: string) => {
@@ -209,6 +245,14 @@ export default async function HomePage() {
       contactEmail: settings?.contactEmail || undefined,
       contactAddress: settings?.contactAddress || undefined
     });
+
+    // Extract unique tags from posts safely
+    const uniqueTags = Array.from(new Set(
+      posts
+        .flatMap(post => post.tags || [])
+        .filter(Boolean)
+        .slice(0, 10)
+    ));
 
     return (
       <>
@@ -523,7 +567,7 @@ export default async function HomePage() {
                   <div className="bg-white rounded-xl shadow-sm p-6 border border-neutral-100">
                     <h3 className="text-lg font-semibold text-neutral-900 mb-4">Popular Tags</h3>
                     <div className="flex flex-wrap gap-2">
-                      {Array.from(new Set(posts.flatMap(post => post.tags || []))).slice(0, 10).map((tag) => (
+                      {uniqueTags.map((tag) => (
                         <Link
                           key={tag}
                           href={`/tags/${tag}`}
@@ -543,7 +587,15 @@ export default async function HomePage() {
     );
   } catch (error) {
     console.error('Error in HomePage:', error);
-    throw error;
+    // Return a simple error page instead of throwing
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold text-gray-900 mb-4">Something went wrong</h1>
+          <p className="text-gray-600">We're working on fixing this issue. Please try again later.</p>
+        </div>
+      </div>
+    );
   } finally {
     await prisma.$disconnect();
   }
