@@ -12,6 +12,10 @@ const nextConfig = {
       },
       {
         protocol: 'http',
+        hostname: 'themidnightspa.com',
+      },
+      {
+        protocol: 'http',
         hostname: 'localhost',
       },
       {
