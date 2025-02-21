@@ -15,7 +15,7 @@ interface Bundle {
   title: string;
   description: string;
   price: number;
-  thumbnail: string | null;
+  thumbnail: string | File | null;
   file?: File;
 }
 
@@ -58,7 +58,7 @@ export default function ProductBundle({ onBundleAdd, products }: ProductBundlePr
       title: formData.title,
       description: formData.description,
       price: parseFloat(formData.price),
-      thumbnail: thumbnailPreview,
+      thumbnail: thumbnail || null,
       file: bundleFile || undefined,
     });
 

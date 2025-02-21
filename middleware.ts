@@ -6,6 +6,11 @@ import type { NextRequest } from 'next/server';
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
+  // Don't protect auth routes
+  if (path.startsWith('/auth/')) {
+    return NextResponse.next();
+  }
+
   // Only protect dashboard routes
   if (path.startsWith('/dashboard')) {
     const token = await getToken({ 
@@ -24,5 +29,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*']
+  matcher: ['/dashboard/:path*', '/auth/:path*']
 }; 

@@ -15,7 +15,7 @@ interface Bundle {
   title: string;
   description: string;
   price: number;
-  thumbnail: string | null;
+  thumbnail: string | File | null;
   file?: File;
 }
 
@@ -119,7 +119,16 @@ export default function DigitalProductForm() {
         formData.append(`bundles[${index}][description]`, bundle.description);
         formData.append(`bundles[${index}][price]`, bundle.price.toString());
         if (bundle.thumbnail) {
-          formData.append(`bundles[${index}][thumbnail]`, bundle.thumbnail);
+          if (bundle.thumbnail instanceof File) {
+            formData.append(`bundles[${index}][thumbnail]`, bundle.thumbnail);
+          } else if (typeof bundle.thumbnail === 'string') {
+            // If it's a URL string, create a new Blob and append it
+            fetch(bundle.thumbnail)
+              .then(res => res.blob())
+              .then(blob => {
+                formData.append(`bundles[${index}][thumbnail]`, blob, `bundle-${index}-thumbnail.jpg`);
+              });
+          }
         }
         if (bundle.file) {
           formData.append(`bundles[${index}][file]`, bundle.file);
@@ -372,7 +381,7 @@ export default function DigitalProductForm() {
             {bundles.map((bundle, index) => (
               <div key={index} className="bg-gray-50 p-4 rounded-lg flex items-start justify-between">
                 <div className="flex items-start space-x-4">
-                  {bundle.thumbnail && (
+                  {bundle.thumbnail && typeof bundle.thumbnail === 'string' && (
                     <div className="relative w-20 h-20">
                       <Image
                         src={bundle.thumbnail}
