@@ -23,8 +23,8 @@ export function getImageUrl(url: string | null): string {
   // If it's already a full URL, return it
   if (url.startsWith('http')) return url;
   
-  // Get the server URL from environment or default to the IP
-  const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://5.161.86.130';
+  // Get the server URL from environment or default to the production URL
+  const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'https://themidnightspa.com';
   
   // Clean up the URL path
   const cleanPath = url.startsWith('/uploads/') 
@@ -33,11 +33,12 @@ export function getImageUrl(url: string | null): string {
       ? `/uploads/${url.split('/uploads/').pop()}`
       : `/uploads/${url}`;
   
-  // For development environment, use relative path
-  if (process.env.NODE_ENV === 'development') {
-    return cleanPath;
+  // Always use full URL in production
+  if (process.env.NODE_ENV === 'production') {
+    // Remove any potential double slashes (except after http/https)
+    return `${serverUrl}${cleanPath}`.replace(/([^:]\/)\/+/g, '$1');
   }
   
-  // For production, use full URL
-  return `${serverUrl}${cleanPath}`;
+  // For development, use relative path
+  return cleanPath;
 } 
