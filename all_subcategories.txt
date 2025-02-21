@@ -1,0 +1,2 @@
+COPY public."PostSubCategory" (id, title, description, thumbnail, slug, "seoTitle", "seoDescription", "seoKeywords", "createdAt", "updatedAt", "categoryId", "parentCategoryId") FROM stdin;
+cm74knom900045f65tsjf1cam	Sleep for Seniors	Sleep for Seniors	/uploads/sleep-for-seniors-1739525648479-972295110.jpg	sleep-for-seniors	Sleep for Seniors	Sleep for Seniors	Sleep for Seniors	2025-02-14 09:34:08.481	2025-02-14 09:34:08.481	cm74j5t4u00005f65rvmb8yek	\N

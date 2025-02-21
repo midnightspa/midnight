@@ -143,17 +143,11 @@ export async function POST(request: Request) {
       const bundleDescription = formData.get(`bundles[${bundleIndex}][description]`) as string;
       const bundlePrice = parseFloat(formData.get(`bundles[${bundleIndex}][price]`) as string);
       const bundleThumbnailFile = formData.get(`bundles[${bundleIndex}][thumbnail]`);
-      const bundleFile = formData.get(`bundles[${bundleIndex}][file]`);
 
       let bundleThumbnailUrl = null;
-      let bundleFileUrl = null;
 
       if (bundleThumbnailFile && (bundleThumbnailFile instanceof File || typeof bundleThumbnailFile === 'string')) {
         bundleThumbnailUrl = await saveFile(bundleThumbnailFile, `${slug}-bundle-${bundleIndex}-thumb`);
-      }
-
-      if (bundleFile && (bundleFile instanceof File || typeof bundleFile === 'string')) {
-        bundleFileUrl = await saveFile(bundleFile, `${slug}-bundle-${bundleIndex}-file`);
       }
 
       // Create bundle slug
@@ -164,7 +158,6 @@ export async function POST(request: Request) {
         description: bundleDescription,
         price: bundlePrice,
         thumbnail: bundleThumbnailUrl,
-        file: bundleFileUrl,
         slug: bundleSlug,
       });
 
@@ -186,22 +179,41 @@ export async function POST(request: Request) {
         featured: false,
         categoryId,
         authorId: session.user?.id as string,
-        bundles: {
-          create: bundles.map(bundle => ({
+      },
+      include: {
+        category: true,
+      },
+    });
+
+    // Create bundles and associate them with the product
+    if (bundles.length > 0) {
+      for (const bundle of bundles) {
+        await prisma.bundle.create({
+          data: {
             title: bundle.title,
             description: bundle.description,
             price: bundle.price,
             thumbnail: bundle.thumbnail,
-            file: bundle.file,
             slug: bundle.slug,
-          })),
-        },
-      },
-      include: {
-        category: true,
-        bundles: true,
-      },
-    });
+            published: false,
+            products: {
+              connect: { id: product.id }
+            }
+          }
+        });
+      }
+
+      // Fetch the product again with bundles included
+      const updatedProduct = await prisma.product.findUnique({
+        where: { id: product.id },
+        include: {
+          category: true,
+          bundles: true,
+        }
+      });
+
+      return NextResponse.json(updatedProduct);
+    }
 
     return NextResponse.json(product);
   } catch (error) {

@@ -16,7 +16,6 @@ interface Bundle {
   description: string;
   price: number;
   thumbnail: string | File | null;
-  file?: File;
 }
 
 interface MediaFile {
@@ -113,7 +112,7 @@ export default function DigitalProductForm() {
         formData.append(`gallery[${index}]`, item.file);
       });
 
-      // Add bundles to form data with their files
+      // Add bundles to form data
       bundles.forEach((bundle, index) => {
         formData.append(`bundles[${index}][title]`, bundle.title);
         formData.append(`bundles[${index}][description]`, bundle.description);
@@ -121,17 +120,7 @@ export default function DigitalProductForm() {
         if (bundle.thumbnail) {
           if (bundle.thumbnail instanceof File) {
             formData.append(`bundles[${index}][thumbnail]`, bundle.thumbnail);
-          } else if (typeof bundle.thumbnail === 'string') {
-            // If it's a URL string, create a new Blob and append it
-            fetch(bundle.thumbnail)
-              .then(res => res.blob())
-              .then(blob => {
-                formData.append(`bundles[${index}][thumbnail]`, blob, `bundle-${index}-thumbnail.jpg`);
-              });
           }
-        }
-        if (bundle.file) {
-          formData.append(`bundles[${index}][file]`, bundle.file);
         }
       });
 
@@ -140,14 +129,18 @@ export default function DigitalProductForm() {
         body: formData,
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || 'Failed to create product');
       }
 
       toast.success('Product created successfully');
       router.push('/dashboard/products');
+      router.refresh();
     } catch (err) {
+      console.error('Error creating product:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to create product');
       setError(err instanceof Error ? err.message : 'Failed to create product');
     } finally {
       setLoading(false);
