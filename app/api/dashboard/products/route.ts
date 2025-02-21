@@ -70,7 +70,7 @@ async function saveFile(file: FormDataEntryValue, slug: string): Promise<string>
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session || !session.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -178,7 +178,7 @@ export async function POST(request: Request) {
         published: false,
         featured: false,
         categoryId,
-        authorId: session.user?.id as string,
+        authorId: session.user.id,
       },
       include: {
         category: true,

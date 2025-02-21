@@ -64,9 +64,6 @@ export async function POST(request: Request) {
     // Write file
     await writeFile(filePath, buffer);
     
-    // Fix permissions through API call
-    await fetch('/api/system/fix-permissions', { method: 'POST' });
-
     // Return the public URL
     const url = `/uploads/${filename}`;
     console.log('Returning URL:', url);
