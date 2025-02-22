@@ -4,6 +4,7 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   reactStrictMode: true,
+  output: 'standalone',
   images: {
     remotePatterns: [
       {
@@ -28,13 +29,13 @@ const nextConfig = {
       }
     ],
     domains: ['5.161.86.130', 'themidnightspa.com', 'localhost'],
-    unoptimized: true,
+    unoptimized: true
   },
   eslint: {
     ignoreDuringBuilds: true
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: true
   },
   experimental: {
     serverActions: {
@@ -42,12 +43,12 @@ const nextConfig = {
       bodySizeLimit: '2mb'
     },
     optimizePackageImports: ['@heroicons/react'],
-    forceSwcTransforms: true,
+    forceSwcTransforms: true
   },
   logging: {
     fetches: {
-      fullUrl: true,
-    },
+      fullUrl: true
+    }
   },
   staticPageGenerationTimeout: 300,
   async headers() {
@@ -57,24 +58,28 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate'
           },
           {
             key: 'Pragma',
-            value: 'no-cache',
+            value: 'no-cache'
           },
           {
             key: 'Expires',
-            value: '0',
-          },
-        ],
-      },
+            value: '0'
+          }
+        ]
+      }
     ];
   },
   webpack: (config) => {
     config.resolve.fallback = { fs: false, path: false };
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ['@svgr/webpack']
+    });
     return config;
-  },
+  }
 };
 
 module.exports = nextConfig;
