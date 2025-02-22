@@ -40,7 +40,6 @@ const nextConfig = {
       bodySizeLimit: '2mb'
     },
     optimizePackageImports: ['@heroicons/react'],
-    optimizeCss: true,
     forceSwcTransforms: true
   },
   logging: {
@@ -76,22 +75,6 @@ const nextConfig = {
   },
   webpack: (config) => {
     config.resolve.fallback = { fs: false, path: false };
-    // Add CSS optimization
-    config.optimization = {
-      ...config.optimization,
-      splitChunks: {
-        ...config.optimization.splitChunks,
-        cacheGroups: {
-          ...config.optimization.splitChunks.cacheGroups,
-          styles: {
-            name: 'styles',
-            type: 'css/mini-extract',
-            chunks: 'all',
-            enforce: true,
-          },
-        },
-      },
-    };
     return config;
   },
 };
