@@ -11,6 +11,9 @@ import Script from 'next/script';
 import SearchArticles from '@/app/components/SearchArticles';
 import WatchMoreButton from '@/app/components/WatchMoreButton';
 
+// Add revalidation time (in seconds)
+export const revalidate = 0;
+
 const poppins = Poppins({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
@@ -114,8 +117,6 @@ async function getLatestVideos() {
   }
 }
 
-export const revalidate = 0;
-
 export async function generateMetadata(): Promise<Metadata> {
   return generateSiteMetadata(
     'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness',
@@ -126,16 +127,21 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   try {
-    // Fetch all data concurrently using Promise.allSettled
-    const [
-      settingsResult,
-      categoriesResult,
-      subcategoriesResult,
-      postsResult,
-      videosResult
-    ] = await Promise.allSettled([
-      getSiteSettings(),
-      prisma.postCategory.findMany({
+    // Initialize empty arrays for data
+    let settings = null;
+    let categories: any[] = [];
+    let subcategories: any[] = [];
+    let posts: any[] = [];
+    let videos: any[] = [];
+
+    try {
+      settings = await getSiteSettings();
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+    }
+
+    try {
+      categories = await prisma.postCategory.findMany({
         select: {
           id: true,
           title: true,
@@ -152,8 +158,13 @@ export default async function HomePage() {
             }
           }
         }
-      }),
-      prisma.postSubCategory.findMany({
+      });
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+
+    try {
+      subcategories = await prisma.postSubCategory.findMany({
         select: {
           id: true,
           title: true,
@@ -173,8 +184,13 @@ export default async function HomePage() {
             }
           }
         }
-      }),
-      prisma.post.findMany({
+      });
+    } catch (error) {
+      console.error('Error fetching subcategories:', error);
+    }
+
+    try {
+      posts = await prisma.post.findMany({
         where: {
           published: true,
         },
@@ -208,8 +224,13 @@ export default async function HomePage() {
             }
           }
         }
-      }),
-      prisma.video.findMany({
+      });
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    }
+
+    try {
+      videos = await prisma.video.findMany({
         where: {
           published: true,
         },
@@ -230,74 +251,67 @@ export default async function HomePage() {
             }
           }
         }
-      })
-    ]);
+      });
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+    }
 
-    // Initialize data with safe defaults
-    const settings = settingsResult.status === 'fulfilled' ? settingsResult.value : null;
-    const categories = categoriesResult.status === 'fulfilled' ? categoriesResult.value : [];
-    const subcategories = subcategoriesResult.status === 'fulfilled' ? subcategoriesResult.value : [];
-    const posts = postsResult.status === 'fulfilled' ? postsResult.value : [];
-    const videos = videosResult.status === 'fulfilled' ? videosResult.value : [];
-
-    // Add null checks for all data transformations
-    const sanitizedPosts = (posts || []).map(post => ({
-      ...post,
-      id: post?.id || '',
-      title: post?.title || 'Untitled Post',
-      excerpt: post?.excerpt || '',
-      thumbnail: post?.thumbnail || null,
-      createdAt: post?.createdAt?.toString() || new Date().toISOString(),
-      tags: Array.isArray(post?.tags) ? post.tags : [],
-      category: post?.category || null,
-      subcategory: post?.subcategory || null,
-      author: {
-        name: post?.author?.name || 'Anonymous'
-      }
-    }));
-
-    const sanitizedCategories = (categories || []).map(category => ({
-      ...category,
-      id: category?.id || '',
-      title: category?.title || 'Uncategorized',
-      description: category?.description || '',
-      thumbnail: category?.thumbnail || null,
-      subcategories: Array.isArray(category?.subcategories) ? category.subcategories : []
-    }));
-
-    const sanitizedSubcategories = (subcategories || []).map(subcategory => ({
-      ...subcategory,
-      id: subcategory?.id || '',
-      title: subcategory?.title || 'Uncategorized',
-      description: subcategory?.description || '',
-      thumbnail: subcategory?.thumbnail || null,
-      category: subcategory?.category || { slug: '', title: '' },
-      _count: {
-        posts: subcategory?._count?.posts || 0
-      }
-    }));
-
-    const sanitizedVideos = (videos || []).map(video => ({
-      ...video,
-      id: video?.id || '',
-      title: video?.title || 'Untitled Video',
-      description: video?.description || '',
-      youtubeUrl: video?.youtubeUrl || '',
-      createdAt: video?.createdAt?.toString() || new Date().toISOString(),
-      author: {
-        name: video?.author?.name || 'Anonymous'
-      }
-    }));
-
-    // Safe extraction of tags with null checks
+    // Safely extract unique tags from posts
     const uniqueTags = Array.from(new Set(
-      (posts || [])
-        .filter(post => Array.isArray(post?.tags))
-        .flatMap(post => post?.tags || [])
+      posts
+        .filter(post => Array.isArray(post.tags))
+        .flatMap(post => post.tags || [])
         .filter(Boolean)
     )).slice(0, 10);
 
-    // Utility functions
+    // Ensure all required data is present and handle missing data gracefully
+    const sanitizedPosts = posts.map(post => ({
+      ...post,
+      id: post.id || '',
+      title: post.title || 'Untitled Post',
+      excerpt: post.excerpt || '',
+      thumbnail: post.thumbnail || null,
+      createdAt: post.createdAt?.toString() || new Date().toISOString(),
+      tags: Array.isArray(post.tags) ? post.tags : [],
+      category: post.category || null,
+      subcategory: post.subcategory || null,
+      author: {
+        name: post.author?.name || 'Anonymous'
+      }
+    }));
+
+    const sanitizedCategories = categories.map(category => ({
+      ...category,
+      id: category.id || '',
+      title: category.title || 'Uncategorized',
+      description: category.description || '',
+      thumbnail: category.thumbnail || null,
+      subcategories: Array.isArray(category.subcategories) ? category.subcategories : []
+    }));
+
+    const sanitizedSubcategories = subcategories.map(subcategory => ({
+      ...subcategory,
+      id: subcategory.id || '',
+      title: subcategory.title || 'Uncategorized',
+      description: subcategory.description || '',
+      thumbnail: subcategory.thumbnail || null,
+      _count: {
+        posts: subcategory._count?.posts || 0
+      }
+    }));
+
+    const sanitizedVideos = videos.map(video => ({
+      ...video,
+      id: video.id || '',
+      title: video.title || 'Untitled Video',
+      description: video.description || '',
+      youtubeUrl: video.youtubeUrl || '',
+      createdAt: video.createdAt?.toString() || new Date().toISOString(),
+      author: {
+        name: video.author?.name || 'Anonymous'
+      }
+    }));
+
     const getYouTubeThumbnail = (url: string) => {
       try {
         const videoId = url.split('v=')[1]?.split('&')[0];
@@ -314,10 +328,9 @@ export default async function HomePage() {
       return url.startsWith('/') ? url : `/${url}`;
     };
 
-    // Ensure structuredData has fallbacks
     const structuredData = generateStructuredData({
-      organizationName: settings?.organizationName || 'Organization',
-      organizationLogo: settings?.organizationLogo || '/default-logo.png',
+      organizationName: settings?.organizationName || undefined,
+      organizationLogo: settings?.organizationLogo || undefined,
       contactPhone: settings?.contactPhone || undefined,
       contactEmail: settings?.contactEmail || undefined,
       contactAddress: settings?.contactAddress || undefined
@@ -655,28 +668,13 @@ export default async function HomePage() {
       </>
     );
   } catch (error) {
-    // Log the full error details
-    console.error('Critical error in HomePage:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      details: error
-    });
-
-    // Return a user-friendly error page
+    console.error('Error in HomePage:', error);
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center max-w-lg mx-auto px-4">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-4">
-            Temporarily Unavailable
-          </h1>
-          <p className="text-gray-600 mb-4">
-            We're experiencing technical difficulties. Please try again in a few minutes.
-          </p>
-          {process.env.NODE_ENV === 'development' && (
-            <p className="text-sm text-gray-500 mt-2">
-              {error instanceof Error ? error.message : 'Unknown error'}
-            </p>
-          )}
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold text-gray-900 mb-4">Something went wrong</h1>
+          <p className="text-gray-600">We're working on fixing this issue. Please try again later.</p>
+          <p className="text-sm text-gray-500 mt-2">{error instanceof Error ? error.message : 'Unknown error'}</p>
         </div>
       </div>
     );
