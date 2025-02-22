@@ -10,6 +10,7 @@ import { Metadata } from 'next';
 import Script from 'next/script';
 import SearchArticles from '@/app/components/SearchArticles';
 import WatchMoreButton from '@/app/components/WatchMoreButton';
+import ClientSideCarousel from '@/app/components/ClientSideCarousel';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -82,12 +83,15 @@ const shimmer = (w: number, h: number) => `
   <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1s" repeatCount="indefinite"  />
 </svg>`;
 
-const toBase64 = (str: string) =>
-  typeof window === 'undefined'
-    ? Buffer.from(str).toString('base64')
-    : window.btoa(str);
+const toBase64 = (str: string) => Buffer.from(str).toString('base64');
 
 const DEFAULT_THUMBNAIL = '/placeholder.jpg';
+
+const getImageUrl = (url: string | null) => {
+  if (!url) return DEFAULT_THUMBNAIL;
+  if (url.startsWith('http')) return url;
+  return url.startsWith('/') ? url : `/${url}`;
+};
 
 async function getLatestVideos() {
   try {
@@ -114,51 +118,71 @@ async function getLatestVideos() {
   }
 }
 
+// Force dynamic rendering and disable all caching
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+export const revalidate = 0
+
+// Disable static metadata
+export async function generateMetadata() {
+  return {
+    title: 'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness',
+    description: 'Discover luxury spa treatments, wellness tips, and relaxation techniques at Midnight Spa.',
+    other: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    },
+  }
+}
+
 async function getPosts(): Promise<Post[]> {
   try {
-    const posts = await prisma.post.findMany({
-      where: {
-        published: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: 6,
-      select: {
-        id: true,
-        title: true,
-        excerpt: true,
-        thumbnail: true,
-        createdAt: true,
-        slug: true,
-        tags: true,
-        category: {
-          select: {
-            title: true,
-            slug: true
-          }
-        },
-        subcategory: {
-          select: {
-            title: true,
-            slug: true
-          }
-        },
-        author: {
-          select: {
-            name: true
-          }
-        }
-      }
-    });
+    // Add cache busting query parameter
+    const timestamp = Date.now();
+    
+    // Use direct database query with no caching
+    const posts = await prisma.$queryRaw`
+      SELECT 
+        p.id,
+        p.title,
+        p.excerpt,
+        p.thumbnail,
+        p.created_at as "createdAt",
+        p.tags,
+        p.slug,
+        c.title as "categoryTitle",
+        c.slug as "categorySlug",
+        sc.title as "subcategoryTitle",
+        sc.slug as "subcategorySlug",
+        a.name as "authorName"
+      FROM "Post" p
+      LEFT JOIN "PostCategory" c ON p.category_id = c.id
+      LEFT JOIN "PostSubCategory" sc ON p.subcategory_id = sc.id
+      LEFT JOIN "User" a ON p.author_id = a.id
+      WHERE p.published = true
+      ORDER BY p.created_at DESC
+      LIMIT 6
+    `;
 
-    return posts.map(post => ({
-      ...post,
+    return (posts as any[]).map(post => ({
+      id: post.id,
+      title: post.title,
       excerpt: post.excerpt || '',
-      createdAt: post.createdAt.toISOString(),
+      thumbnail: post.thumbnail,
+      createdAt: new Date(post.createdAt).toISOString(),
       tags: post.tags || [],
+      slug: post.slug,
+      category: post.categoryTitle ? {
+        title: post.categoryTitle,
+        slug: post.categorySlug,
+      } : null,
+      subcategory: post.subcategoryTitle ? {
+        title: post.subcategoryTitle,
+        slug: post.subcategorySlug,
+      } : null,
       author: {
-        name: post.author?.name || 'Anonymous'
+        name: post.authorName || 'Anonymous'
       }
     }));
   } catch (error) {
@@ -167,33 +191,21 @@ async function getPosts(): Promise<Post[]> {
   }
 }
 
-// Static metadata
-export const metadata: Metadata = {
-  title: 'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness',
-  description: 'Discover luxury spa treatments, wellness tips, and relaxation techniques at Midnight Spa. Expert guides, personalized services, and a tranquil atmosphere for your ultimate wellness journey.',
-  openGraph: {
-    title: 'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness',
-    description: 'Discover luxury spa treatments, wellness tips, and relaxation techniques at Midnight Spa. Expert guides, personalized services, and a tranquil atmosphere for your ultimate wellness journey.',
-    images: ['/images/og-image.jpg'],
-  },
-};
-
 export default async function HomePage() {
+  // Add response headers to prevent caching
+  const headers = new Headers();
+  headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  headers.set('Pragma', 'no-cache');
+  headers.set('Expires', '0');
+
   try {
-    // Initialize empty arrays for data
-    let settings = null;
-    let categories: any[] = [];
-    let subcategories: any[] = [];
-    let videos: any[] = [];
-
-    try {
-      settings = await getSiteSettings();
-    } catch (error) {
-      console.error('Error fetching settings:', error);
-    }
-
-    try {
-      categories = await prisma.postCategory.findMany({
+    // Fetch all data in parallel
+    const [settings, categories, subcategories, posts, videos] = await Promise.all([
+      getSiteSettings().catch(error => {
+        console.error('Error fetching settings:', error);
+        return null;
+      }),
+      prisma.postCategory.findMany({
         select: {
           id: true,
           title: true,
@@ -210,13 +222,11 @@ export default async function HomePage() {
             }
           }
         }
-      });
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-
-    try {
-      subcategories = await prisma.postSubCategory.findMany({
+      }).catch(error => {
+        console.error('Error fetching categories:', error);
+        return [];
+      }),
+      prisma.postSubCategory.findMany({
         select: {
           id: true,
           title: true,
@@ -236,22 +246,14 @@ export default async function HomePage() {
             }
           }
         }
-      });
-    } catch (error) {
-      console.error('Error fetching subcategories:', error);
-    }
-
-    // Fetch posts using the new API endpoint
-    const posts = await getPosts();
-
-    try {
-      videos = await prisma.video.findMany({
-        where: {
-          published: true,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
+      }).catch(error => {
+        console.error('Error fetching subcategories:', error);
+        return [];
+      }),
+      getPosts(),
+      prisma.video.findMany({
+        where: { published: true },
+        orderBy: { createdAt: 'desc' },
         take: 6,
         select: {
           id: true,
@@ -261,15 +263,14 @@ export default async function HomePage() {
           createdAt: true,
           slug: true,
           author: {
-            select: {
-              name: true
-            }
+            select: { name: true }
           }
         }
-      });
-    } catch (error) {
-      console.error('Error fetching videos:', error);
-    }
+      }).catch(error => {
+        console.error('Error fetching videos:', error);
+        return [];
+      })
+    ]);
 
     // Safely extract unique tags from posts
     const uniqueTags = Array.from(new Set(
@@ -337,12 +338,6 @@ export default async function HomePage() {
       }
     };
 
-    const getImageUrl = (url: string | null) => {
-      if (!url) return DEFAULT_THUMBNAIL;
-      if (url.startsWith('http')) return url;
-      return url.startsWith('/') ? url : `/${url}`;
-    };
-
     const structuredData = generateStructuredData({
       organizationName: settings?.organizationName || undefined,
       organizationLogo: settings?.organizationLogo || undefined,
@@ -394,61 +389,12 @@ export default async function HomePage() {
               </div>
 
               {/* Right side slider */}
-              <div className="w-[400px] relative h-[70vh] overflow-hidden">
-                <div className="absolute inset-0">
-                  <div className="relative h-full">
-                    <div className="absolute inset-0 bg-gradient-to-b from-gray-100 via-transparent to-gray-100 z-10 pointer-events-none"></div>
-                    <div className="vertical-carousel py-8">
-                      {[...sanitizedPosts, ...sanitizedPosts].map((post, index) => (
-                        <Link 
-                          key={`${post.id}-${index}`}
-                          href={`/posts/${post.slug}`}
-                          className="block transform transition-all duration-500 hover:scale-105 hover:-translate-x-2 mb-6"
-                        >
-                          <div className="bg-white rounded-xl overflow-hidden shadow-lg w-[380px] hover:shadow-xl transition-shadow duration-300">
-                            <div className="relative h-40">
-                              <ImageWithFallback
-                                src={getImageUrl(post.thumbnail)}
-                                alt={post.title}
-                                fill
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                className="object-cover"
-                                placeholder="blur"
-                                blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
-                                priority={index < 2}
-                              />
-                              {post.category && (
-                                <span className="absolute top-4 left-4 px-3 py-1 bg-white/90 backdrop-blur-sm text-neutral-900 text-sm font-medium rounded-full">
-                                  {post.category.title}
-                                </span>
-                              )}
-                            </div>
-                            <div className="p-4">
-                              <h3 className="text-lg font-semibold text-neutral-900 mb-2 line-clamp-2">
-                                {post.title}
-                              </h3>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-8 h-8 rounded-full bg-neutral-200"></div>
-                                  <span className="text-sm text-neutral-600">
-                                    {post.author.name}
-                                  </span>
-                                </div>
-                                <time className="text-sm text-neutral-500" dateTime={new Date(post.createdAt).toISOString()}>
-                                  {new Date(post.createdAt).toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric'
-                                  })}
-                                </time>
-                              </div>
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ClientSideCarousel 
+                posts={sanitizedPosts} 
+                getImageUrl={getImageUrl}
+                shimmer={shimmer}
+                toBase64={toBase64}
+              />
             </div>
           </section>
 

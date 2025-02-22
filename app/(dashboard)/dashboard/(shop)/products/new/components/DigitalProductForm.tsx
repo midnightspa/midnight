@@ -16,6 +16,7 @@ interface Bundle {
   description: string;
   price: number;
   thumbnail: string | File | null;
+  file?: File;
 }
 
 interface MediaFile {
@@ -98,6 +99,29 @@ export default function DigitalProductForm() {
 
     try {
       const formData = new FormData(e.currentTarget);
+      
+      // Validate required fields before submission
+      const title = formData.get('title') as string;
+      const description = formData.get('description') as string;
+      const price = formData.get('price') as string;
+      const categoryId = formData.get('categoryId') as string;
+
+      if (!title?.trim()) {
+        throw new Error('Title is required');
+      }
+      if (!description?.trim()) {
+        throw new Error('Description is required');
+      }
+      if (!price || isNaN(parseFloat(price))) {
+        throw new Error('Valid price is required');
+      }
+      if (!categoryId) {
+        throw new Error('Category is required');
+      }
+      if (!digitalFile) {
+        throw new Error('Digital file is required');
+      }
+
       formData.append('type', 'DIGITAL');
       
       if (digitalFile) {
@@ -122,6 +146,20 @@ export default function DigitalProductForm() {
             formData.append(`bundles[${index}][thumbnail]`, bundle.thumbnail);
           }
         }
+        if (bundle.file) {
+          formData.append(`bundles[${index}][file]`, bundle.file);
+        }
+      });
+
+      console.log('Submitting form data:', {
+        title,
+        description,
+        price,
+        categoryId,
+        hasDigitalFile: !!digitalFile,
+        hasThumbnail: !!thumbnail,
+        galleryCount: gallery.length,
+        bundlesCount: bundles.length
       });
 
       const response = await fetch('/api/dashboard/products', {
@@ -129,19 +167,28 @@ export default function DigitalProductForm() {
         body: formData,
       });
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create product');
+      let data;
+      try {
+        data = await response.json();
+      } catch (err) {
+        console.error('Failed to parse response:', err);
+        throw new Error('Server returned an invalid response');
       }
 
+      if (!response.ok) {
+        console.error('Server error response:', data);
+        throw new Error(data?.error || 'Failed to create product');
+      }
+
+      console.log('Product created successfully:', data);
       toast.success('Product created successfully');
       router.push('/dashboard/products');
       router.refresh();
     } catch (err) {
       console.error('Error creating product:', err);
-      toast.error(err instanceof Error ? err.message : 'Failed to create product');
-      setError(err instanceof Error ? err.message : 'Failed to create product');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create product';
+      toast.error(errorMessage);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

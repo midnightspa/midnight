@@ -1,41 +1,21 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/auth.config';
-import fs from 'fs/promises';
-import path from 'path';
-import { parseStringPromise } from 'xml2js';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const sitemapPath = path.join(process.cwd(), 'public', 'sitemap.xml');
-    
-    try {
-      const stats = await fs.stat(sitemapPath);
-      const content = await fs.readFile(sitemapPath, 'utf-8');
-      const result = await parseStringPromise(content);
-      
-      const urls = result.urlset?.url || [];
-      
-      return NextResponse.json({
-        lastUpdated: stats.mtime.toISOString(),
-        urlCount: urls.length,
-      });
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        return NextResponse.json({
-          lastUpdated: null,
-          urlCount: 0,
-        });
+    return NextResponse.json(
+      { status: 'success' },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Content-Type': 'application/json',
+        },
       }
-      throw error;
-    }
+    );
   } catch (error) {
-    console.error('Error checking sitemap status:', error);
     return NextResponse.json(
       { error: 'Failed to check sitemap status' },
       { status: 500 }

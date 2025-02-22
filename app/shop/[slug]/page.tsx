@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Poppins } from 'next/font/google';
-import { useCart } from '../../contexts/CartContext';
+import { useCart } from '@/app/contexts/CartContext';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -16,48 +16,54 @@ interface Product {
   title: string;
   description: string;
   price: number;
-  salePrice?: number | null;
+  salePrice: number | null;
   thumbnail: string | null;
   gallery: string[];
-  type: 'DIGITAL' | 'PHYSICAL';
   stock: number | null;
-  digitalAssets: string[];
   slug: string;
   category: {
     id: string;
     title: string;
     slug: string;
   };
-  bundles: {
-    id: string;
-    title: string;
-    slug: string;
-  }[];
 }
+
+const shimmer = (w: number, h: number) => `
+<svg width="${w}" height="${h}" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <linearGradient id="g">
+      <stop stop-color="#f6f7f8" offset="20%" />
+      <stop stop-color="#edeef1" offset="50%" />
+      <stop stop-color="#f6f7f8" offset="70%" />
+    </linearGradient>
+  </defs>
+  <rect width="${w}" height="${h}" fill="#f6f7f8" />
+  <rect id="r" width="${w}" height="${h}" fill="url(#g)" />
+  <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1s" repeatCount="indefinite"  />
+</svg>`;
+
+const toBase64 = (str: string) =>
+  typeof window === 'undefined'
+    ? Buffer.from(str).toString('base64')
+    : window.btoa(str);
 
 export default function ProductPage({ params }: { params: { slug: string } }) {
   const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await fetch(`/api/products/slug/${params.slug}`);
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error('Product not found');
-          }
-          throw new Error('Failed to fetch product');
-        }
+        const response = await fetch(`/api/shop/products/${params.slug}`);
+        if (!response.ok) throw new Error('Product not found');
         const data = await response.json();
         setProduct(data);
         setSelectedImage(data.thumbnail);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch product');
+      } catch (error) {
+        console.error('Error fetching product:', error);
       } finally {
         setLoading(false);
       }
@@ -66,45 +72,33 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     fetchProduct();
   }, [params.slug]);
 
-  const handleQuantityChange = (value: number) => {
-    if (product?.type === 'PHYSICAL') {
-      const newQuantity = Math.max(1, Math.min(value, product.stock || 1));
-      setQuantity(newQuantity);
-    }
-  };
-
   const handleAddToCart = () => {
     if (!product) return;
-
     addItem({
       id: product.id,
       title: product.title,
-      price: product.price,
-      salePrice: product.salePrice,
+      price: product.salePrice || product.price,
       quantity,
-      type: product.type,
       thumbnail: product.thumbnail,
+      type: 'PHYSICAL',
     });
-
-    // Optional: Show a success message or notification
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-neutral-200 border-t-neutral-900 rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-neutral-900"></div>
       </div>
     );
   }
 
-  if (error || !product) {
+  if (!product) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-semibold text-red-600 mb-4">Error</h1>
-          <p className="text-gray-600 mb-4">{error || 'Product not found'}</p>
-          <Link href="/shop" className="text-blue-600 hover:underline">
-            Return to shop
+          <h1 className="text-2xl font-semibold text-neutral-900 mb-4">Product not found</h1>
+          <Link href="/shop" className="text-blue-600 hover:text-blue-700">
+            Return to Shop
           </Link>
         </div>
       </div>
@@ -113,46 +107,30 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
 
   return (
     <div className={`min-h-screen bg-neutral-50 ${poppins.className}`}>
-      <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
-        <nav className="mb-8">
-          <ol className="flex items-center space-x-2 text-sm">
-            <li>
-              <Link href="/shop" className="text-neutral-600 hover:text-neutral-900">
-                Shop
-              </Link>
-            </li>
-            <li className="text-neutral-400">/</li>
-            <li>
-              <Link
-                href={`/categories/${product.category.slug}`}
-                className="text-neutral-600 hover:text-neutral-900"
-              >
-                {product.category.title}
-              </Link>
-            </li>
-            <li className="text-neutral-400">/</li>
-            <li className="text-neutral-900 font-medium">{product.title}</li>
-          </ol>
-        </nav>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div className="container mx-auto px-4 py-12">
+        <div className="flex flex-col lg:flex-row gap-12">
           {/* Product Images */}
-          <div className="space-y-4">
-            <div className="aspect-square relative rounded-xl overflow-hidden bg-white">
+          <div className="lg:w-2/3 space-y-6">
+            {/* Main Image */}
+            <div className="aspect-[4/3] relative rounded-xl overflow-hidden bg-white">
               <Image
                 src={selectedImage || product.thumbnail || '/placeholder.jpg'}
                 alt={product.title}
                 fill
                 className="object-contain"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                placeholder="blur"
+                blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
               />
             </div>
+
+            {/* Thumbnail Gallery */}
             {product.gallery.length > 0 && (
               <div className="grid grid-cols-4 gap-4">
                 <button
                   onClick={() => setSelectedImage(product.thumbnail)}
-                  className={`aspect-square relative rounded-lg overflow-hidden bg-white ${
-                    selectedImage === product.thumbnail ? 'ring-2 ring-blue-500' : ''
+                  className={`aspect-square relative rounded-lg overflow-hidden ${
+                    selectedImage === product.thumbnail ? 'ring-2 ring-neutral-900' : ''
                   }`}
                 >
                   <Image
@@ -160,14 +138,15 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
                     alt={product.title}
                     fill
                     className="object-cover"
+                    sizes="(max-width: 768px) 25vw, 20vw"
                   />
                 </button>
                 {product.gallery.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(image)}
-                    className={`aspect-square relative rounded-lg overflow-hidden bg-white ${
-                      selectedImage === image ? 'ring-2 ring-blue-500' : ''
+                    className={`aspect-square relative rounded-lg overflow-hidden ${
+                      selectedImage === image ? 'ring-2 ring-neutral-900' : ''
                     }`}
                   >
                     <Image
@@ -175,6 +154,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
                       alt={`${product.title} - Image ${index + 1}`}
                       fill
                       className="object-cover"
+                      sizes="(max-width: 768px) 25vw, 20vw"
                     />
                   </button>
                 ))}
@@ -183,122 +163,99 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           </div>
 
           {/* Product Info */}
-          <div>
-            <div className="bg-white rounded-xl p-8">
-              <h1 className="text-3xl font-bold text-neutral-900 mb-4">
+          <div className="lg:w-1/3 space-y-8">
+            <div>
+              <Link
+                href={`/shop/categories/${product.category.slug}`}
+                className="text-sm text-neutral-600 hover:text-neutral-900"
+              >
+                {product.category.title}
+              </Link>
+              <h1 className="text-3xl font-semibold text-neutral-900 mt-2">
                 {product.title}
               </h1>
-
-              <div className="flex items-baseline gap-4 mb-6">
+              <div className="mt-4 space-y-1">
                 {product.salePrice ? (
                   <>
-                    <span className="text-3xl font-bold text-neutral-900">
+                    <span className="text-2xl font-semibold text-neutral-900">
                       ${product.salePrice}
                     </span>
-                    <span className="text-xl text-neutral-500 line-through">
+                    <span className="text-lg text-neutral-500 line-through block">
                       ${product.price}
                     </span>
                   </>
                 ) : (
-                  <span className="text-3xl font-bold text-neutral-900">
+                  <span className="text-2xl font-semibold text-neutral-900">
                     ${product.price}
                   </span>
                 )}
               </div>
+            </div>
 
-              <div className="prose prose-neutral mb-8">
-                <p>{product.description}</p>
+            <div className="prose prose-neutral">
+              <p>{product.description}</p>
+            </div>
+
+            {/* Stock Status */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-sm font-medium text-neutral-700">
+                  Stock:
+                </span>
+                <span className={`text-sm ${
+                  (product.stock || 0) > 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {(product.stock || 0) > 0 ? 'In Stock' : 'Out of Stock'}
+                </span>
               </div>
-
-              {product.type === 'PHYSICAL' && (
-                <div className="mb-8">
-                  <p className="text-sm text-neutral-600 mb-2">
-                    Stock: {product.stock} available
-                  </p>
-                  <div className="flex items-center gap-4">
-                    <label htmlFor="quantity" className="text-sm font-medium text-neutral-900">
-                      Quantity
-                    </label>
-                    <div className="flex items-center">
-                      <button
-                        onClick={() => handleQuantityChange(quantity - 1)}
-                        className="w-8 h-8 flex items-center justify-center border border-neutral-300 rounded-l-md hover:bg-neutral-50"
-                      >
-                        -
-                      </button>
-                      <input
-                        type="number"
-                        id="quantity"
-                        value={quantity}
-                        onChange={(e) => handleQuantityChange(Number(e.target.value))}
-                        className="w-16 h-8 border-y border-neutral-300 text-center"
-                      />
-                      <button
-                        onClick={() => handleQuantityChange(quantity + 1)}
-                        className="w-8 h-8 flex items-center justify-center border border-neutral-300 rounded-r-md hover:bg-neutral-50"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
+              {(product.stock || 0) > 0 && (
+                <div className="flex items-center gap-4 mb-6">
+                  <label htmlFor="quantity" className="text-sm font-medium text-neutral-700">
+                    Quantity:
+                  </label>
+                  <input
+                    type="number"
+                    id="quantity"
+                    min="1"
+                    max={product.stock || 1}
+                    value={quantity}
+                    onChange={(e) => setQuantity(parseInt(e.target.value))}
+                    className="w-20 px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                  />
                 </div>
               )}
+            </div>
 
+            {/* Add to Cart Button */}
+            <div className="flex flex-col gap-4">
               <button
                 onClick={handleAddToCart}
-                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                disabled={(product.stock || 0) <= 0}
+                className="w-full px-6 py-3 bg-neutral-900 text-white rounded-xl hover:bg-neutral-800 transition-colors disabled:bg-neutral-300 disabled:cursor-not-allowed"
               >
                 Add to Cart
               </button>
+              <button className="w-full px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">
+                Buy Now
+              </button>
+            </div>
 
-              {/* Product Type Badge */}
-              <div className="mt-8 flex items-center gap-2">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  product.type === 'DIGITAL'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-green-100 text-green-800'
-                }`}>
-                  {product.type.charAt(0) + product.type.slice(1).toLowerCase()} Product
-                </span>
+            {/* Social Proof */}
+            <div className="border-t border-neutral-200 pt-8">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-semibold text-neutral-900">4.9/5</div>
+                  <div className="text-sm text-neutral-600">Customer Rating</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-semibold text-neutral-900">1.2k+</div>
+                  <div className="text-sm text-neutral-600">Happy Customers</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-semibold text-neutral-900">24/7</div>
+                  <div className="text-sm text-neutral-600">Support</div>
+                </div>
               </div>
-
-              {/* Digital Product Info */}
-              {product.type === 'DIGITAL' && product.digitalAssets.length > 0 && (
-                <div className="mt-8">
-                  <h3 className="text-lg font-semibold mb-4">Included Files</h3>
-                  <ul className="space-y-2">
-                    {product.digitalAssets.map((asset, index) => (
-                      <li key={index} className="flex items-center gap-2 text-sm text-neutral-600">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <span>{asset.split('/').pop()}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Bundles */}
-              {product.bundles.length > 0 && (
-                <div className="mt-8">
-                  <h3 className="text-lg font-semibold mb-4">Available in Bundles</h3>
-                  <div className="space-y-4">
-                    {product.bundles.map((bundle) => (
-                      <Link
-                        key={bundle.id}
-                        href={`/shop/bundles/${bundle.slug}`}
-                        className="block bg-neutral-50 p-4 rounded-lg hover:bg-neutral-100 transition-colors"
-                      >
-                        <h4 className="font-medium text-neutral-900">{bundle.title}</h4>
-                        <p className="text-sm text-neutral-600 mt-1">
-                          View bundle details →
-                        </p>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>

@@ -91,22 +91,31 @@ export async function POST(request: Request) {
     }
 
     // Create slug from title
-    const slug = title
+    let slug = title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
 
-    // Check if slug exists
-    const existingProduct = await prisma.product.findUnique({
-      where: { slug },
-    });
+    // Check if slug exists and generate a unique one if needed
+    let slugExists = true;
+    let slugCounter = 0;
+    let finalSlug = slug;
 
-    if (existingProduct) {
-      return NextResponse.json(
-        { error: 'A product with this name already exists' },
-        { status: 400 }
-      );
+    while (slugExists) {
+      const existingProduct = await prisma.product.findUnique({
+        where: { slug: finalSlug },
+      });
+
+      if (!existingProduct) {
+        slugExists = false;
+      } else {
+        slugCounter++;
+        finalSlug = `${slug}-${slugCounter}`;
+      }
     }
+
+    // Use the finalSlug instead of the original slug
+    slug = finalSlug;
 
     // Handle file uploads
     let digitalAssetUrl = null;
@@ -143,11 +152,17 @@ export async function POST(request: Request) {
       const bundleDescription = formData.get(`bundles[${bundleIndex}][description]`) as string;
       const bundlePrice = parseFloat(formData.get(`bundles[${bundleIndex}][price]`) as string);
       const bundleThumbnailFile = formData.get(`bundles[${bundleIndex}][thumbnail]`);
+      const bundleFile = formData.get(`bundles[${bundleIndex}][file]`);
 
       let bundleThumbnailUrl = null;
+      let bundleFileUrl = null;
 
       if (bundleThumbnailFile && (bundleThumbnailFile instanceof File || typeof bundleThumbnailFile === 'string')) {
         bundleThumbnailUrl = await saveFile(bundleThumbnailFile, `${slug}-bundle-${bundleIndex}-thumb`);
+      }
+
+      if (bundleFile && (bundleFile instanceof File || typeof bundleFile === 'string')) {
+        bundleFileUrl = await saveFile(bundleFile, `${slug}-bundle-${bundleIndex}-file`);
       }
 
       // Create bundle slug
@@ -158,6 +173,7 @@ export async function POST(request: Request) {
         description: bundleDescription,
         price: bundlePrice,
         thumbnail: bundleThumbnailUrl,
+        file: bundleFileUrl,
         slug: bundleSlug,
       });
 
@@ -193,11 +209,14 @@ export async function POST(request: Request) {
             title: bundle.title,
             description: bundle.description,
             price: bundle.price,
-            thumbnail: bundle.thumbnail,
             slug: bundle.slug,
             published: false,
+            thumbnail: bundle.thumbnail,
+            file: bundle.file,
             products: {
-              connect: { id: product.id }
+              connect: {
+                id: product.id
+              }
             }
           }
         });
@@ -217,9 +236,18 @@ export async function POST(request: Request) {
 
     return NextResponse.json(product);
   } catch (error) {
-    console.error('Product creation error:', error);
+    // Safe error logging that handles null/undefined
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorDetails = {
+      message: errorMessage,
+      type: error instanceof Error ? error.constructor.name : typeof error,
+      ...(error instanceof Error && error.stack ? { stack: error.stack } : {})
+    };
+    
+    console.error('Product creation error:', JSON.stringify(errorDetails, null, 2));
+    
     return NextResponse.json(
-      { error: 'Failed to create product' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
@@ -235,25 +263,23 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get('category');
     const featured = searchParams.get('featured');
-    const published = searchParams.get('published');
-
-    const where = {
-      ...(categoryId && { categoryId }),
-      ...(featured === 'true' && { featured: true }),
-      ...(published === 'true' && { published: true }),
-    };
 
     const products = await prisma.product.findMany({
-      where,
+      where: {
+        ...(categoryId && { categoryId }),
+        ...(featured === 'true' && { featured: true }),
+      },
       include: {
         category: {
           select: {
+            id: true,
             title: true,
             slug: true,
           },
         },
         author: {
           select: {
+            id: true,
             name: true,
           },
         },

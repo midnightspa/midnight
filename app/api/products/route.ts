@@ -71,28 +71,37 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const categoryId = searchParams.get('category');
-    const featured = searchParams.get('featured');
-    const published = searchParams.get('published');
-
-    const where = {
-      ...(categoryId && { categoryId }),
-      ...(featured === 'true' && { featured: true }),
-      ...(published === 'true' && { published: true }),
-    };
+    const categorySlug = searchParams.get('category');
+    const minPrice = searchParams.get('minPrice') ? Number(searchParams.get('minPrice')) : undefined;
+    const maxPrice = searchParams.get('maxPrice') ? Number(searchParams.get('maxPrice')) : undefined;
 
     const products = await prisma.product.findMany({
-      where,
+      where: {
+        published: true,
+        ...(categorySlug && {
+          category: {
+            slug: categorySlug,
+          },
+        }),
+        ...(minPrice !== undefined && {
+          OR: [
+            { price: { gte: minPrice } },
+            { salePrice: { gte: minPrice } },
+          ],
+        }),
+        ...(maxPrice !== undefined && {
+          OR: [
+            { price: { lte: maxPrice } },
+            { salePrice: { lte: maxPrice } },
+          ],
+        }),
+      },
       include: {
         category: {
           select: {
+            id: true,
             title: true,
             slug: true,
-          },
-        },
-        author: {
-          select: {
-            name: true,
           },
         },
       },

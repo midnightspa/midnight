@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  generateEtags: false,
   images: {
     remotePatterns: [
       {
@@ -28,12 +28,10 @@ const nextConfig = {
     unoptimized: true,
   },
   eslint: {
-    ignoreDuringBuilds: false,
-    dirs: ['app', 'components', 'lib', 'types']
+    ignoreDuringBuilds: true
   },
   typescript: {
     ignoreBuildErrors: true,
-    tsconfigPath: './tsconfig.json'
   },
   experimental: {
     serverActions: {
@@ -42,43 +40,33 @@ const nextConfig = {
     },
     optimizePackageImports: ['@heroicons/react'],
     forceSwcTransforms: true,
-    esmExternals: true
   },
   logging: {
     fetches: {
       fullUrl: true,
     },
   },
-  headers: async () => {
+  staticPageGenerationTimeout: 300,
+  poweredByHeader: false,
+  compress: true,
+  reactStrictMode: true,
+  swcMinify: true,
+  async headers() {
     return [
       {
-        source: '/api/:path*',
+        source: '/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, max-age=0',
-          },
-        ],
-      },
-      {
-        source: '/',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-store, max-age=0',
-          },
-        ],
-      },
-      {
-        source: '/uploads/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=3600',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
           },
           {
-            key: 'Access-Control-Allow-Origin',
-            value: '*',
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+          {
+            key: 'Expires',
+            value: '0',
           },
         ],
       },
@@ -87,6 +75,10 @@ const nextConfig = {
   webpack: (config) => {
     config.resolve.fallback = { fs: false, path: false };
     return config;
+  },
+  onDemandEntries: {
+    maxInactiveAge: 0,
+    pagesBufferLength: 0,
   },
 };
 

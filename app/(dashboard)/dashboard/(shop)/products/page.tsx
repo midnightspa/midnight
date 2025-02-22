@@ -15,6 +15,15 @@ interface Product {
   published: boolean;
   featured: boolean;
   createdAt: string;
+  slug: string;
+  category: {
+    id: string;
+    title: string;
+    slug: string;
+  };
+  digitalAssets?: string[];
+  gallery?: string[];
+  stock?: number | null;
 }
 
 export default function ProductsPage() {
@@ -28,11 +37,28 @@ export default function ProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/products');
-      if (!response.ok) throw new Error('Failed to fetch products');
+      console.log('Fetching products from dashboard API...');
+      const response = await fetch('/api/dashboard/products');
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error('Failed to fetch products');
+      }
+      
       const data = await response.json();
-      setProducts(data);
+      console.log('Products data:', data);
+      
+      if (Array.isArray(data)) {
+        console.log(`Found ${data.length} products`);
+        setProducts(data);
+      } else {
+        console.error('Unexpected data format:', data);
+        setProducts([]);
+      }
     } catch (err) {
+      console.error('Error in fetchProducts:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch products');
     } finally {
       setLoading(false);
@@ -43,7 +69,7 @@ export default function ProductsPage() {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      const response = await fetch(`/api/products/${productId}`, {
+      const response = await fetch(`/api/dashboard/products/${productId}`, {
         method: 'DELETE',
       });
 
@@ -57,7 +83,7 @@ export default function ProductsPage() {
 
   const handlePublishToggle = async (productId: string, currentStatus: boolean) => {
     try {
-      const response = await fetch(`/api/products/${productId}`, {
+      const response = await fetch(`/api/dashboard/products/${productId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -142,9 +168,21 @@ export default function ProductsPage() {
                     <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">
                       {product.title}
                     </h3>
-                    <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-                      {product.type}
-                    </span>
+                    <div className="flex gap-2 mt-1">
+                      <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                        {product.type}
+                      </span>
+                      {product.category && (
+                        <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                          {product.category.title}
+                        </span>
+                      )}
+                      {product.featured && (
+                        <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
+                          Featured
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
@@ -168,19 +206,31 @@ export default function ProductsPage() {
                   {product.description}
                 </p>
                 <div className="flex items-center justify-between text-sm text-gray-500">
-                  <div>
-                    <span className="font-medium text-gray-900">
-                      ${product.salePrice || product.price}
-                    </span>
-                    {product.salePrice && (
-                      <span className="ml-2 line-through">
-                        ${product.price}
+                  <div className="space-y-1">
+                    <div>
+                      <span className="font-medium text-gray-900">
+                        ${product.salePrice || product.price}
                       </span>
+                      {product.salePrice && (
+                        <span className="ml-2 line-through">
+                          ${product.price}
+                        </span>
+                      )}
+                    </div>
+                    {product.stock !== null && (
+                      <div className="text-xs">
+                        Stock: {product.stock}
+                      </div>
+                    )}
+                    {product.digitalAssets && product.digitalAssets.length > 0 && (
+                      <div className="text-xs text-blue-600">
+                        {product.digitalAssets.length} digital assets
+                      </div>
                     )}
                   </div>
                   <div className="flex space-x-2">
                     <Link
-                      href={`/dashboard/shop/products/edit/${product.id}`}
+                      href={`/dashboard/products/edit/${product.id}`}
                       className="text-blue-600 hover:text-blue-800"
                     >
                       Edit
