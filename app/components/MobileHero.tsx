@@ -15,9 +15,10 @@ interface Post {
   title: string;
   thumbnail: string | null;
   slug: string;
-  category?: {
+  category: {
     title: string;
-  };
+    slug: string;
+  } | null;
 }
 
 interface MobileHeroProps {

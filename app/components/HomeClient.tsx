@@ -14,6 +14,80 @@ const poppins = Poppins({
   weight: ['400', '500', '600', '700'],
 });
 
+interface Category {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail: string | null;
+  slug: string;
+  subcategories: {
+    id: string;
+    title: string;
+    description: string | null;
+    thumbnail: string | null;
+    slug: string;
+  }[];
+}
+
+interface SubCategory {
+  id: string;
+  title: string;
+  description: string | null;
+  thumbnail: string | null;
+  slug: string;
+  category: {
+    id: string;
+    title: string;
+    slug: string;
+  };
+  _count: {
+    posts: number;
+  };
+}
+
+interface Post {
+  id: string;
+  title: string;
+  excerpt: string;
+  thumbnail: string | null;
+  createdAt: string;
+  tags: string[];
+  slug: string;
+  category: {
+    title: string;
+    slug: string;
+  } | null;
+  subcategory: {
+    title: string;
+    slug: string;
+  } | null;
+  author: {
+    name: string;
+  };
+}
+
+interface Video {
+  id: string;
+  title: string;
+  description: string;
+  youtubeUrl: string;
+  createdAt: string;
+  slug: string;
+  author: {
+    name: string;
+  };
+}
+
+interface HomeClientProps {
+  categories: Category[];
+  subcategories: SubCategory[];
+  posts: Post[];
+  videos: Video[];
+  uniqueTags: string[];
+}
+
+const DEFAULT_THUMBNAIL = '/placeholder.jpg';
+
 const shimmer = (w: number, h: number) => `
 <svg width="${w}" height="${h}" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <defs>
@@ -40,8 +114,6 @@ const toBase64 = (str: string) => {
   }
 };
 
-const DEFAULT_THUMBNAIL = '/placeholder.jpg';
-
 const getImageUrl = (url: string | null) => {
   if (!url) return DEFAULT_THUMBNAIL;
   if (url.startsWith('http')) return url;
@@ -58,18 +130,10 @@ const getYouTubeThumbnail = (url: string) => {
   }
 };
 
-interface HomeClientProps {
-  posts: any[];
-  categories: any[];
-  subcategories: any[];
-  videos: any[];
-  uniqueTags: string[];
-}
-
-export default function HomeClient({ posts, categories, subcategories, videos, uniqueTags }: HomeClientProps) {
+export default function HomeClient({ categories, subcategories, posts, videos, uniqueTags }: HomeClientProps) {
   return (
     <div className={`min-h-screen bg-white ${poppins.className}`}>
-      {/* Hero Section with Enhanced Design */}
+      {/* Hero Section */}
       <section className="relative bg-gray-100">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
         
@@ -162,7 +226,7 @@ export default function HomeClient({ posts, categories, subcategories, videos, u
         </div>
       </section>
 
-      {/* Featured Categories with Enhanced Cards */}
+      {/* Featured Categories */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-end mb-12">
@@ -213,7 +277,7 @@ export default function HomeClient({ posts, categories, subcategories, videos, u
         </div>
       </section>
 
-      {/* Trending Topics Carousel */}
+      {/* Trending Topics */}
       <SubCatCarousel subcategories={subcategories} />
 
       {/* Videos Section */}
@@ -248,10 +312,13 @@ export default function HomeClient({ posts, categories, subcategories, videos, u
                         blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
                       />
                     </div>
-                    <div className="p-4">
-                      <h3 className="text-lg font-semibold text-neutral-900 mb-2 line-clamp-2">
+                    <div className="p-6">
+                      <h3 className="text-xl font-semibold text-neutral-900 mb-2 group-hover:text-neutral-700">
                         {video.title}
                       </h3>
+                      <p className="text-neutral-600 mb-4 line-clamp-2">
+                        {video.description}
+                      </p>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-full bg-neutral-200"></div>
@@ -276,7 +343,7 @@ export default function HomeClient({ posts, categories, subcategories, videos, u
         </section>
       )}
 
-      {/* Latest Posts Grid Section */}
+      {/* Latest Posts Grid */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-end mb-12">
