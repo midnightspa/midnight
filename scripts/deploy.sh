@@ -1,19 +1,20 @@
 #!/bin/bash
 
 # Pull latest changes
-git pull
+git pull origin main
 
-# Install dependencies
+# Clean cache and install dependencies
+rm -rf .next node_modules/.cache
 npm install
 
-# Generate Prisma client
-npx prisma generate
-
 # Build the application
-npm run build
+NODE_ENV=production npm run build
 
-# Generate sitemap
-npx ts-node app/scripts/seo/generate-sitemap.ts
+# Trigger revalidation
+curl -X POST https://themidnightspa.com/api/revalidate \
+  -H "Content-Type: application/json" \
+  -H "x-revalidate-token: $REVALIDATE_TOKEN" \
+  -d '{"path":"/"}'
 
-# Restart PM2 process
+# Restart the application
 pm2 restart midnightspa 

@@ -114,6 +114,8 @@ async function getLatestVideos() {
   }
 }
 
+export const revalidate = 0;
+
 export async function generateMetadata(): Promise<Metadata> {
   return generateSiteMetadata(
     'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness',
