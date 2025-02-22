@@ -17,32 +17,67 @@ interface SubCategory {
   slug: string;
 }
 
-interface PostFormProps {
-  postId: string;
+interface Author {
+  id: string;
+  name: string;
+  email: string;
 }
 
-export default function PostForm({ postId }: PostFormProps) {
+interface InitialData {
+  title: string;
+  slug: string;
+  content: string;
+  excerpt: string;
+  categoryId: string;
+  subcategoryId: string;
+  tags: string[];
+  seoTitle: string;
+  seoDescription: string;
+  seoKeywords: string;
+  published: boolean;
+  thumbnail: string;
+  category: Category | null;
+  subcategory: SubCategory | null;
+  author: Author;
+}
+
+interface PostFormProps {
+  postId: string;
+  initialData?: InitialData;
+}
+
+export default function PostForm({ postId, initialData }: PostFormProps) {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [content, setContent] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialData?.categoryId || '');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>(initialData?.subcategoryId || '');
+  const [content, setContent] = useState(initialData?.content || '');
+  const [tags, setTags] = useState<string[]>(initialData?.tags || []);
   const [tagInput, setTagInput] = useState('');
-  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(initialData?.thumbnail || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchPost();
+    if (!initialData) {
+      fetchPost();
+    }
     fetchCategories();
-  }, [postId]);
+  }, [postId, initialData]);
 
   useEffect(() => {
     if (selectedCategory) {
       fetchSubcategories();
     }
   }, [selectedCategory]);
+
+  // Load initial subcategories if we have a selected category
+  useEffect(() => {
+    if (initialData?.categoryId) {
+      fetchSubcategories();
+    }
+  }, []);
 
   const generateSlug = (title: string) => {
     return title
@@ -138,28 +173,58 @@ export default function PostForm({ postId }: PostFormProps) {
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newCategoryId = e.target.value;
+    setSelectedCategory(newCategoryId);
+    setSelectedSubcategory(''); // Reset subcategory when category changes
+  };
+
+  const handleSubcategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedSubcategory(e.target.value);
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      const formData = new FormData(e.currentTarget);
-      formData.append('content', content);
-      formData.append('tags', JSON.stringify(tags));
+      const formElement = e.currentTarget;
+      const formData = new FormData(formElement);
+      
+      // Create a data object from the form data
+      const data = {
+        title: formData.get('title'),
+        slug: formData.get('slug'),
+        excerpt: formData.get('excerpt'),
+        content: content,
+        categoryId: selectedCategory,
+        subcategoryId: selectedSubcategory || null,
+        tags: tags,
+        seoTitle: formData.get('seoTitle'),
+        seoDescription: formData.get('seoDescription'),
+        seoKeywords: formData.get('seoKeywords'),
+        published: formElement.querySelector<HTMLInputElement>('input[name="published"]')?.checked || false,
+        thumbnail: thumbnailPreview
+      };
 
       const response = await fetch(`/api/posts/${postId}`, {
         method: 'PATCH',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update post');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update post');
       }
 
       router.push('/dashboard/posts');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
+      console.error('Error updating post:', err);
     } finally {
       setLoading(false);
     }
@@ -183,6 +248,7 @@ export default function PostForm({ postId }: PostFormProps) {
             name="title"
             id="title"
             required
+            defaultValue={initialData?.title}
             onChange={handleTitleChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           />
@@ -197,6 +263,7 @@ export default function PostForm({ postId }: PostFormProps) {
             name="slug"
             id="slug"
             required
+            defaultValue={initialData?.slug}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           />
         </div>
@@ -209,6 +276,7 @@ export default function PostForm({ postId }: PostFormProps) {
             name="excerpt"
             id="excerpt"
             rows={3}
+            defaultValue={initialData?.excerpt}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           />
         </div>
@@ -232,7 +300,8 @@ export default function PostForm({ postId }: PostFormProps) {
             name="categoryId"
             id="categoryId"
             required
-            onChange={(e) => setSelectedCategory(e.target.value)}
+            value={selectedCategory}
+            onChange={handleCategoryChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           >
             <option value="">Select a category</option>
@@ -252,6 +321,8 @@ export default function PostForm({ postId }: PostFormProps) {
             <select
               name="subcategoryId"
               id="subcategoryId"
+              value={selectedSubcategory}
+              onChange={handleSubcategoryChange}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             >
               <option value="">Select a subcategory</option>
@@ -263,34 +334,6 @@ export default function PostForm({ postId }: PostFormProps) {
             </select>
           </div>
         )}
-
-        <div>
-          <label htmlFor="thumbnail" className="block text-sm font-medium text-gray-700">
-            Thumbnail
-          </label>
-          <input
-            type="file"
-            name="thumbnail"
-            id="thumbnail"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="mt-1 block w-full text-sm text-gray-500
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-md file:border-0
-              file:text-sm file:font-semibold
-              file:bg-blue-50 file:text-blue-700
-              hover:file:bg-blue-100"
-          />
-          {thumbnailPreview && (
-            <div className="mt-2">
-              <img
-                src={thumbnailPreview}
-                alt="Thumbnail preview"
-                className="h-32 w-32 object-cover rounded-lg"
-              />
-            </div>
-          )}
-        </div>
 
         <div>
           <label htmlFor="tags" className="block text-sm font-medium text-gray-700">
@@ -306,9 +349,9 @@ export default function PostForm({ postId }: PostFormProps) {
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
             <div className="mt-2 flex flex-wrap gap-2">
-              {tags.map(tag => (
+              {tags.map((tag, index) => (
                 <span
-                  key={tag}
+                  key={index}
                   className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                 >
                   {tag}
@@ -317,13 +360,35 @@ export default function PostForm({ postId }: PostFormProps) {
                     onClick={() => handleTagRemove(tag)}
                     className="ml-1 inline-flex items-center p-0.5 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500 focus:outline-none"
                   >
-                    <span className="sr-only">Remove tag</span>
                     ×
                   </button>
                 </span>
               ))}
             </div>
           </div>
+        </div>
+
+        <div>
+          <label htmlFor="thumbnail" className="block text-sm font-medium text-gray-700">
+            Thumbnail
+          </label>
+          <input
+            type="file"
+            name="thumbnail"
+            id="thumbnail"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          />
+          {thumbnailPreview && (
+            <div className="mt-2">
+              <img
+                src={thumbnailPreview}
+                alt="Thumbnail preview"
+                className="h-32 w-32 object-cover rounded-lg"
+              />
+            </div>
+          )}
         </div>
 
         <div>
@@ -334,6 +399,7 @@ export default function PostForm({ postId }: PostFormProps) {
             type="text"
             name="seoTitle"
             id="seoTitle"
+            defaultValue={initialData?.seoTitle}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           />
         </div>
@@ -346,6 +412,7 @@ export default function PostForm({ postId }: PostFormProps) {
             name="seoDescription"
             id="seoDescription"
             rows={2}
+            defaultValue={initialData?.seoDescription}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           />
         </div>
@@ -358,37 +425,33 @@ export default function PostForm({ postId }: PostFormProps) {
             type="text"
             name="seoKeywords"
             id="seoKeywords"
+            defaultValue={initialData?.seoKeywords}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           />
         </div>
 
-        <div>
-          <label className="inline-flex items-center">
-            <input
-              type="checkbox"
-              name="published"
-              className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm text-gray-600">Publish immediately</span>
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            name="published"
+            id="published"
+            defaultChecked={initialData?.published}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="published" className="ml-2 block text-sm text-gray-900">
+            Published
           </label>
         </div>
-      </div>
 
-      <div className="flex justify-end space-x-3">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-        >
-          {loading ? 'Saving...' : 'Save Changes'}
-        </button>
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={loading}
+            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {loading ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
       </div>
     </form>
   );
