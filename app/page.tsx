@@ -116,16 +116,51 @@ async function getLatestVideos() {
 
 async function getPosts(): Promise<Post[]> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/home/posts`, {
-      cache: 'no-store',
-      next: { revalidate: 0 }
+    const posts = await prisma.post.findMany({
+      where: {
+        published: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 6,
+      select: {
+        id: true,
+        title: true,
+        excerpt: true,
+        thumbnail: true,
+        createdAt: true,
+        slug: true,
+        tags: true,
+        category: {
+          select: {
+            title: true,
+            slug: true
+          }
+        },
+        subcategory: {
+          select: {
+            title: true,
+            slug: true
+          }
+        },
+        author: {
+          select: {
+            name: true
+          }
+        }
+      }
     });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch posts');
-    }
-    
-    return await response.json();
+
+    return posts.map(post => ({
+      ...post,
+      excerpt: post.excerpt || '',
+      createdAt: post.createdAt.toISOString(),
+      tags: post.tags || [],
+      author: {
+        name: post.author?.name || 'Anonymous'
+      }
+    }));
   } catch (error) {
     console.error('Error fetching posts:', error);
     return [];
