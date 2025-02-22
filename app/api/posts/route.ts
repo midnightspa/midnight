@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Debug session data
@@ -89,15 +89,22 @@ export async function POST(req: Request) {
 
     // Trigger revalidation for affected pages
     const paths = [
-      `/posts/${post.slug}`,
+      '/', // Always revalidate homepage
       '/posts',
-      '/',
+      `/posts/${post.slug}`,
       '/archive',
-      `/categories/${post.categoryId}`,
     ];
 
+    if (post.categoryId) {
+      paths.push(`/categories/${post.category?.slug}`);
+    }
+    
+    if (post.subcategoryId) {
+      paths.push(`/categories/${post.category?.slug}/${post.subcategory?.slug}`);
+    }
+
     // Revalidate all affected paths
-    await Promise.all(paths.map(async (path) => {
+    await Promise.allSettled(paths.map(async (path) => {
       try {
         await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/revalidate`, {
           method: 'POST',
@@ -106,7 +113,7 @@ export async function POST(req: Request) {
           },
           body: JSON.stringify({ 
             path,
-            tag: `post-${post.id}`
+            secret: process.env.REVALIDATION_SECRET
           })
         });
       } catch (error) {
@@ -130,35 +137,13 @@ export async function POST(req: Request) {
       });
     }
 
-    return NextResponse.json({
-      success: true,
-      data: post
-    }, { status: 201 });
-
-  } catch (error: any) {
-    // Log error details without using error as argument
-    console.log('Error creating post:', {
-      message: error?.message || 'Unknown error',
-      code: error?.code,
-      name: error?.name
-    });
-    
-    // Check if it's a Prisma error with a code property
-    if (error && typeof error === 'object' && 'code' in error) {
-      return NextResponse.json({
-        success: false,
-        error: 'Database error',
-        details: error.message || 'Unknown database error',
-        code: error.code
-      }, { status: 500 });
-    }
-
-    // Generic error
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to create post',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json(post);
+  } catch (error) {
+    console.error('Error creating post:', error);
+    return NextResponse.json(
+      { error: 'Failed to create post' },
+      { status: 500 }
+    );
   }
 }
 

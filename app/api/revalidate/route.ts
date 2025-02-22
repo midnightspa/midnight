@@ -11,11 +11,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Invalid secret' }, { status: 401 });
     }
 
-    // Revalidate the path
-    revalidatePath(path);
+    // Always revalidate the homepage when any content changes
+    revalidatePath('/');
+    
+    // Revalidate the specific path if it's different from homepage
+    if (path !== '/') {
+      revalidatePath(path);
+    }
 
-    return NextResponse.json({ revalidated: true, now: Date.now() });
+    return NextResponse.json({ 
+      revalidated: true, 
+      paths: path === '/' ? ['/'] : ['/', path],
+      now: Date.now() 
+    });
   } catch (err) {
+    console.error('Error during revalidation:', err);
     return NextResponse.json({ message: 'Error revalidating' }, { status: 500 });
   }
 } 
