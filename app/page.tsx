@@ -114,6 +114,24 @@ async function getLatestVideos() {
   }
 }
 
+async function getPosts(): Promise<Post[]> {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/home/posts`, {
+      cache: 'no-store',
+      next: { revalidate: 0 }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch posts');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    return [];
+  }
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   return generateSiteMetadata(
     'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness',
@@ -128,7 +146,6 @@ export default async function HomePage() {
     let settings = null;
     let categories: any[] = [];
     let subcategories: any[] = [];
-    let posts: any[] = [];
     let videos: any[] = [];
 
     try {
@@ -186,45 +203,8 @@ export default async function HomePage() {
       console.error('Error fetching subcategories:', error);
     }
 
-    try {
-      posts = await prisma.post.findMany({
-        where: {
-          published: true,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        take: 6,
-        select: {
-          id: true,
-          title: true,
-          excerpt: true,
-          thumbnail: true,
-          createdAt: true,
-          slug: true,
-          tags: true,
-          category: {
-            select: {
-              title: true,
-              slug: true
-            }
-          },
-          subcategory: {
-            select: {
-              title: true,
-              slug: true
-            }
-          },
-          author: {
-            select: {
-              name: true
-            }
-          }
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-    }
+    // Fetch posts using the new API endpoint
+    const posts = await getPosts();
 
     try {
       videos = await prisma.video.findMany({
