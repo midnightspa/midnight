@@ -10,11 +10,9 @@ npm install
 # Build the application
 NODE_ENV=production npm run build
 
-# Trigger revalidation
-curl -X POST https://themidnightspa.com/api/revalidate \
-  -H "Content-Type: application/json" \
-  -H "x-revalidate-token: $REVALIDATE_TOKEN" \
-  -d '{"path":"/"}'
+# Clear server-side cache
+rm -rf .next/cache/*
 
-# Restart the application
-pm2 restart midnightspa 
+# Restart the application with cache clearing
+pm2 delete midnightspa || true
+pm2 start npm --name "midnightspa" -- start 

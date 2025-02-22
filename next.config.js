@@ -27,7 +27,7 @@ const nextConfig = {
     unoptimized: true,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
     dirs: ['app', 'components', 'lib', 'types']
   },
   typescript: {
@@ -51,6 +51,15 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, max-age=0',
+          },
+        ],
+      },
+      {
+        source: '/',
         headers: [
           {
             key: 'Cache-Control',
