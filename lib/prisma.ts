@@ -4,15 +4,31 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+const prismaClientSingleton = () => {
+  return new PrismaClient({
+    log: [
+      {
+        emit: 'event',
+        level: 'error',
+      },
+      {
+        emit: 'event',
+        level: 'warn',
+      },
+    ],
+    errorFormat: 'minimal',
+  });
+};
+
+export const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
 
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }
 
-// Handle connection errors
-(prisma as any).$on('error', (e: any) => {
-  console.error('Prisma Client error:', e);
+// Ensure connection is properly closed on process termination
+process.on('beforeExit', async () => {
+  await prisma.$disconnect();
 });
 
 export default prisma; 
