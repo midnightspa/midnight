@@ -1,3 +1,5 @@
+'use client';
+
 import { Metadata } from 'next';
 import Head from 'next/head';
 

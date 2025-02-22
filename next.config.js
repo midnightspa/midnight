@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   images: {
     remotePatterns: [
       {
@@ -40,7 +41,8 @@ const nextConfig = {
       bodySizeLimit: '2mb'
     },
     optimizePackageImports: ['@heroicons/react'],
-    forceSwcTransforms: true
+    forceSwcTransforms: true,
+    esmExternals: true
   },
   logging: {
     fetches: {
