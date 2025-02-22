@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Poppins } from 'next/font/google';
 import SubCatCarousel from '@/components/SubCatCarousel';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';  // Import the centralized Prisma client
 import { generateMetadata as generateSiteMetadata, generateStructuredData, getSiteSettings } from '@/lib/seo';
 import MobileHero from '@/app/components/MobileHero';
 import ImageWithFallback from '@/app/components/ImageWithFallback';
@@ -10,21 +10,6 @@ import { Metadata } from 'next';
 import Script from 'next/script';
 import SearchArticles from '@/app/components/SearchArticles';
 import WatchMoreButton from '@/app/components/WatchMoreButton';
-
-// Create a single PrismaClient instance
-let prisma: PrismaClient;
-
-if (process.env.NODE_ENV === 'production') {
-  prisma = new PrismaClient();
-} else {
-  // @ts-ignore
-  if (!global.prisma) {
-    // @ts-ignore
-    global.prisma = new PrismaClient();
-  }
-  // @ts-ignore
-  prisma = global.prisma;
-}
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -139,16 +124,50 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   try {
-    const settings = await getSiteSettings();
-    
-    const [categories, subcategories, posts, videos] = await Promise.all([
-      prisma.postCategory.findMany({
-        include: {
-          subcategories: true,
-        },
-      }).catch(() => []),
-      prisma.postSubCategory.findMany({
-        include: {
+    // Initialize empty arrays for data
+    let settings = null;
+    let categories: any[] = [];
+    let subcategories: any[] = [];
+    let posts: any[] = [];
+    let videos: any[] = [];
+
+    try {
+      settings = await getSiteSettings();
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+    }
+
+    try {
+      categories = await prisma.postCategory.findMany({
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          thumbnail: true,
+          slug: true,
+          subcategories: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              thumbnail: true,
+              slug: true,
+            }
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+
+    try {
+      subcategories = await prisma.postSubCategory.findMany({
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          thumbnail: true,
+          slug: true,
           category: {
             select: {
               id: true,
@@ -162,8 +181,13 @@ export default async function HomePage() {
             }
           }
         }
-      }).catch(() => []),
-      prisma.post.findMany({
+      });
+    } catch (error) {
+      console.error('Error fetching subcategories:', error);
+    }
+
+    try {
+      posts = await prisma.post.findMany({
         where: {
           published: true,
         },
@@ -197,8 +221,13 @@ export default async function HomePage() {
             }
           }
         }
-      }).catch(() => []),
-      prisma.video.findMany({
+      });
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    }
+
+    try {
+      videos = await prisma.video.findMany({
         where: {
           published: true,
         },
@@ -219,8 +248,66 @@ export default async function HomePage() {
             }
           }
         }
-      }).catch(() => []),
-    ]);
+      });
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+    }
+
+    // Safely extract unique tags from posts
+    const uniqueTags = Array.from(new Set(
+      posts
+        .filter(post => Array.isArray(post.tags))
+        .flatMap(post => post.tags || [])
+        .filter(Boolean)
+    )).slice(0, 10);
+
+    // Ensure all required data is present and handle missing data gracefully
+    const sanitizedPosts = posts.map(post => ({
+      ...post,
+      id: post.id || '',
+      title: post.title || 'Untitled Post',
+      excerpt: post.excerpt || '',
+      thumbnail: post.thumbnail || null,
+      createdAt: post.createdAt?.toString() || new Date().toISOString(),
+      tags: Array.isArray(post.tags) ? post.tags : [],
+      category: post.category || null,
+      subcategory: post.subcategory || null,
+      author: {
+        name: post.author?.name || 'Anonymous'
+      }
+    }));
+
+    const sanitizedCategories = categories.map(category => ({
+      ...category,
+      id: category.id || '',
+      title: category.title || 'Uncategorized',
+      description: category.description || '',
+      thumbnail: category.thumbnail || null,
+      subcategories: Array.isArray(category.subcategories) ? category.subcategories : []
+    }));
+
+    const sanitizedSubcategories = subcategories.map(subcategory => ({
+      ...subcategory,
+      id: subcategory.id || '',
+      title: subcategory.title || 'Uncategorized',
+      description: subcategory.description || '',
+      thumbnail: subcategory.thumbnail || null,
+      _count: {
+        posts: subcategory._count?.posts || 0
+      }
+    }));
+
+    const sanitizedVideos = videos.map(video => ({
+      ...video,
+      id: video.id || '',
+      title: video.title || 'Untitled Video',
+      description: video.description || '',
+      youtubeUrl: video.youtubeUrl || '',
+      createdAt: video.createdAt?.toString() || new Date().toISOString(),
+      author: {
+        name: video.author?.name || 'Anonymous'
+      }
+    }));
 
     const getYouTubeThumbnail = (url: string) => {
       try {
@@ -246,14 +333,6 @@ export default async function HomePage() {
       contactAddress: settings?.contactAddress || undefined
     });
 
-    // Extract unique tags from posts safely
-    const uniqueTags = Array.from(new Set(
-      posts
-        .flatMap(post => post.tags || [])
-        .filter(Boolean)
-        .slice(0, 10)
-    ));
-
     return (
       <>
         <Script
@@ -267,7 +346,7 @@ export default async function HomePage() {
             <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
             
             {/* Mobile Hero */}
-            <MobileHero posts={posts} />
+            <MobileHero posts={sanitizedPosts} />
 
             {/* Desktop & Tablet Hero */}
             <div className="hidden lg:flex container mx-auto px-4 h-[70vh] items-center justify-between relative overflow-hidden">
@@ -302,7 +381,7 @@ export default async function HomePage() {
                   <div className="relative h-full">
                     <div className="absolute inset-0 bg-gradient-to-b from-gray-100 via-transparent to-gray-100 z-10 pointer-events-none"></div>
                     <div className="vertical-carousel py-8">
-                      {[...posts, ...posts].map((post, index) => (
+                      {[...sanitizedPosts, ...sanitizedPosts].map((post, index) => (
                         <Link 
                           key={`${post.id}-${index}`}
                           href={`/posts/${post.slug}`}
@@ -368,7 +447,7 @@ export default async function HomePage() {
                 </Link>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {categories.slice(0, 3).map((category) => (
+                {sanitizedCategories.slice(0, 3).map((category) => (
                   <div
                     key={category.id}
                     className="group bg-neutral-50 rounded-xl p-6 hover:bg-neutral-100 transition-all duration-300 border border-neutral-100"
@@ -407,10 +486,10 @@ export default async function HomePage() {
           </section>
 
           {/* Trending Topics Carousel */}
-          <SubCatCarousel subcategories={subcategories} />
+          <SubCatCarousel subcategories={sanitizedSubcategories} />
 
           {/* Videos Section */}
-          {videos.length > 0 && (
+          {sanitizedVideos.length > 0 && (
             <section className="py-16 bg-neutral-100">
               <div className="container mx-auto px-4">
                 <div className="flex justify-between items-center mb-8">
@@ -423,7 +502,7 @@ export default async function HomePage() {
                   </Link>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {videos.map((video) => (
+                  {sanitizedVideos.map((video) => (
                     <Link
                       key={video.id}
                       href={`/videos/${video.slug}`}
@@ -486,7 +565,7 @@ export default async function HomePage() {
                 {/* Main Posts Grid - 8 columns */}
                 <div className="col-span-12 lg:col-span-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {posts.slice(0, 6).map((post) => (
+                    {sanitizedPosts.slice(0, 6).map((post) => (
                       <Link
                         key={post.id}
                         href={`/posts/${post.slug}`}
@@ -546,7 +625,7 @@ export default async function HomePage() {
                   <div className="bg-white rounded-xl shadow-sm p-6 border border-neutral-100">
                     <h3 className="text-lg font-semibold text-neutral-900 mb-4">Popular Categories</h3>
                     <div className="space-y-2">
-                      {subcategories.slice(0, 5).map((subcategory) => (
+                      {sanitizedSubcategories.slice(0, 5).map((subcategory) => (
                         <Link
                           key={subcategory.id}
                           href={`/categories/${subcategory.category.slug}/${subcategory.slug}`}
@@ -587,16 +666,14 @@ export default async function HomePage() {
     );
   } catch (error) {
     console.error('Error in HomePage:', error);
-    // Return a simple error page instead of throwing
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
           <h1 className="text-2xl font-semibold text-gray-900 mb-4">Something went wrong</h1>
           <p className="text-gray-600">We're working on fixing this issue. Please try again later.</p>
+          <p className="text-sm text-gray-500 mt-2">{error instanceof Error ? error.message : 'Unknown error'}</p>
         </div>
       </div>
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
