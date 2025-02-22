@@ -11,9 +11,6 @@ import Script from 'next/script';
 import SearchArticles from '@/app/components/SearchArticles';
 import WatchMoreButton from '@/app/components/WatchMoreButton';
 
-// Add revalidation configuration
-export const revalidate = 0; // Set to 0 for on-demand revalidation
-
 const poppins = Poppins({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
@@ -134,10 +131,14 @@ export default async function HomePage() {
     let posts: any[] = [];
     let videos: any[] = [];
 
-    // Fetch all data in parallel with proper error handling
-    const [settingsData, categoriesData, subcategoriesData, postsData, videosData] = await Promise.allSettled([
-      getSiteSettings(),
-      prisma.postCategory.findMany({
+    try {
+      settings = await getSiteSettings();
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+    }
+
+    try {
+      categories = await prisma.postCategory.findMany({
         select: {
           id: true,
           title: true,
@@ -154,8 +155,13 @@ export default async function HomePage() {
             }
           }
         }
-      }),
-      prisma.postSubCategory.findMany({
+      });
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+
+    try {
+      subcategories = await prisma.postSubCategory.findMany({
         select: {
           id: true,
           title: true,
@@ -175,8 +181,13 @@ export default async function HomePage() {
             }
           }
         }
-      }),
-      prisma.post.findMany({
+      });
+    } catch (error) {
+      console.error('Error fetching subcategories:', error);
+    }
+
+    try {
+      posts = await prisma.post.findMany({
         where: {
           published: true,
         },
@@ -210,8 +221,13 @@ export default async function HomePage() {
             }
           }
         }
-      }),
-      prisma.video.findMany({
+      });
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    }
+
+    try {
+      videos = await prisma.video.findMany({
         where: {
           published: true,
         },
@@ -232,38 +248,9 @@ export default async function HomePage() {
             }
           }
         }
-      })
-    ]);
-
-    // Process the results and handle any errors
-    if (settingsData.status === 'fulfilled') {
-      settings = settingsData.value;
-    } else {
-      console.error('Error fetching settings:', settingsData.reason);
-    }
-
-    if (categoriesData.status === 'fulfilled') {
-      categories = categoriesData.value;
-    } else {
-      console.error('Error fetching categories:', categoriesData.reason);
-    }
-
-    if (subcategoriesData.status === 'fulfilled') {
-      subcategories = subcategoriesData.value;
-    } else {
-      console.error('Error fetching subcategories:', subcategoriesData.reason);
-    }
-
-    if (postsData.status === 'fulfilled') {
-      posts = postsData.value;
-    } else {
-      console.error('Error fetching posts:', postsData.reason);
-    }
-
-    if (videosData.status === 'fulfilled') {
-      videos = videosData.value;
-    } else {
-      console.error('Error fetching videos:', videosData.reason);
+      });
+    } catch (error) {
+      console.error('Error fetching videos:', error);
     }
 
     // Safely extract unique tags from posts
