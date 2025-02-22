@@ -13,6 +13,9 @@ const poppins = Poppins({
   weight: ['400', '500', '600', '700'],
 });
 
+// Add revalidation time (in seconds)
+export const revalidate = 30;
+
 const DEFAULT_THUMBNAIL = '/placeholder.jpg';
 
 const getImageUrl = (url: string | null) => {

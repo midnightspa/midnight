@@ -1,31 +1,21 @@
 import { revalidatePath } from 'next/cache';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { path = '/' } = body;
-    
-    // Verify the secret if provided
-    const secret = request.headers.get('x-revalidate-token');
-    if (secret !== process.env.REVALIDATE_TOKEN) {
-      return NextResponse.json(
-        { message: 'Invalid token' },
-        { status: 401 }
-      );
+    const { path = '/', secret } = body;
+
+    // Check for secret to confirm this is a valid request
+    if (secret !== process.env.REVALIDATION_SECRET) {
+      return NextResponse.json({ message: 'Invalid secret' }, { status: 401 });
     }
 
     // Revalidate the path
     revalidatePath(path);
 
-    return NextResponse.json(
-      { revalidated: true, message: `Revalidated ${path}` },
-      { status: 200 }
-    );
-  } catch (error) {
-    return NextResponse.json(
-      { message: 'Error revalidating', error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ revalidated: true, now: Date.now() });
+  } catch (err) {
+    return NextResponse.json({ message: 'Error revalidating' }, { status: 500 });
   }
 } 
