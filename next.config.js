@@ -9,23 +9,23 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'img.youtube.com',
+        hostname: 'img.youtube.com'
       },
       {
         protocol: 'https',
-        hostname: 'themidnightspa.com',
+        hostname: 'themidnightspa.com'
       },
       {
         protocol: 'http',
-        hostname: 'themidnightspa.com',
+        hostname: 'themidnightspa.com'
       },
       {
         protocol: 'http',
-        hostname: 'localhost',
+        hostname: 'localhost'
       },
       {
         protocol: 'http',
-        hostname: '5.161.86.130',
+        hostname: '5.161.86.130'
       }
     ],
     domains: ['5.161.86.130', 'themidnightspa.com', 'localhost'],
