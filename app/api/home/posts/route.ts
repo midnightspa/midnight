@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { headers } from 'next/headers';
 
+// Add segment config to handle dynamic requests
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 export async function GET() {
   try {
+    // Get request headers
+    const headersList = headers();
+    
     const posts = await prisma.post.findMany({
       where: {
         published: true,
@@ -41,9 +47,21 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json(posts);
+    // Set cache control headers
+    return new NextResponse(JSON.stringify(posts), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store, must-revalidate'
+      }
+    });
   } catch (error) {
     console.error('Error fetching home page posts:', error);
-    return NextResponse.json({ error: 'Failed to fetch posts' }, { status: 500 });
+    return new NextResponse(JSON.stringify({ error: 'Failed to fetch posts' }), { 
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store, must-revalidate'
+      }
+    });
   }
 } 
