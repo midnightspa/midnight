@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   generateEtags: false,
+  poweredByHeader: false,
+  compress: true,
+  reactStrictMode: true,
   images: {
     remotePatterns: [
       {
@@ -47,10 +50,6 @@ const nextConfig = {
     },
   },
   staticPageGenerationTimeout: 300,
-  poweredByHeader: false,
-  compress: true,
-  reactStrictMode: true,
-  swcMinify: true,
   async headers() {
     return [
       {
@@ -75,10 +74,6 @@ const nextConfig = {
   webpack: (config) => {
     config.resolve.fallback = { fs: false, path: false };
     return config;
-  },
-  onDemandEntries: {
-    maxInactiveAge: 0,
-    pagesBufferLength: 0,
   },
 };
 
