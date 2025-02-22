@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Poppins } from 'next/font/google';
 import SubCatCarousel from '@/components/SubCatCarousel';
 import prisma from '@/lib/prisma';  // Import the centralized Prisma client
-import { generateMetadata as generateSiteMetadata, generateStructuredData, getSiteSettings } from '@/lib/seo';
+import { generateStructuredData, getSiteSettings } from '@/lib/seo';
 import MobileHero from '@/app/components/MobileHero';
 import ImageWithFallback from '@/app/components/ImageWithFallback';
 import { Metadata } from 'next';
@@ -132,13 +132,16 @@ async function getPosts(): Promise<Post[]> {
   }
 }
 
-export async function generateMetadata(): Promise<Metadata> {
-  return generateSiteMetadata(
-    'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness',
-    'Discover luxury spa treatments, wellness tips, and relaxation techniques at Midnight Spa. Expert guides, personalized services, and a tranquil atmosphere for your ultimate wellness journey.',
-    `${process.env.NEXT_PUBLIC_BASE_URL}/images/og-image.jpg`
-  );
-}
+// Static metadata
+export const metadata: Metadata = {
+  title: 'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness',
+  description: 'Discover luxury spa treatments, wellness tips, and relaxation techniques at Midnight Spa. Expert guides, personalized services, and a tranquil atmosphere for your ultimate wellness journey.',
+  openGraph: {
+    title: 'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness',
+    description: 'Discover luxury spa treatments, wellness tips, and relaxation techniques at Midnight Spa. Expert guides, personalized services, and a tranquil atmosphere for your ultimate wellness journey.',
+    images: ['/images/og-image.jpg'],
+  },
+};
 
 export default async function HomePage() {
   try {
