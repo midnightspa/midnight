@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import ImageWithFallback from '@/app/components/ImageWithFallback';
 import SearchArticles from '@/app/components/SearchArticles';
+import prisma from '@/lib/prisma';
 
 interface Post {
   id: string;
@@ -48,20 +49,111 @@ const getImageUrl = (url: string | null) => {
   return url.startsWith('/') ? url : `/${url}`;
 };
 
-interface HomePostProps {
-  posts: Post[];
-  subcategories: {
-    id: string;
-    title: string;
-    slug: string;
-    _count: {
-      posts: number;
-    };
-  }[];
-  uniqueTags: string[];
+async function getPosts(): Promise<Post[]> {
+  try {
+    const posts = await prisma.post.findMany({
+      where: {
+        published: true,
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: 6,
+      select: {
+        id: true,
+        title: true,
+        excerpt: true,
+        thumbnail: true,
+        createdAt: true,
+        tags: true,
+        slug: true,
+        category: {
+          select: {
+            title: true,
+            slug: true,
+          }
+        },
+        subcategory: {
+          select: {
+            title: true,
+            slug: true,
+          }
+        },
+        author: {
+          select: {
+            name: true
+          }
+        }
+      }
+    });
+
+    return posts.map(post => ({
+      id: post.id || '',
+      title: post.title || 'Untitled Post',
+      excerpt: post.excerpt || '',
+      thumbnail: post.thumbnail,
+      createdAt: post.createdAt.toISOString(),
+      tags: post.tags || [],
+      slug: post.slug,
+      category: post.category ? {
+        title: post.category.title,
+        slug: post.category.slug,
+      } : null,
+      subcategory: post.subcategory ? {
+        title: post.subcategory.title,
+        slug: post.subcategory.slug,
+      } : null,
+      author: {
+        name: post.author?.name || 'Anonymous'
+      }
+    }));
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    return [];
+  }
 }
 
-export default function HomePost({ posts, subcategories, uniqueTags }: HomePostProps) {
+async function getSubcategories() {
+  try {
+    const subcategories = await prisma.postSubCategory.findMany({
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        _count: {
+          select: {
+            posts: true
+          }
+        }
+      }
+    });
+
+    return subcategories.map(subcategory => ({
+      ...subcategory,
+      _count: {
+        posts: subcategory._count?.posts || 0
+      }
+    }));
+  } catch (error) {
+    console.error('Error fetching subcategories:', error);
+    return [];
+  }
+}
+
+export default async function HomePost() {
+  const [posts, subcategories] = await Promise.all([
+    getPosts(),
+    getSubcategories()
+  ]);
+
+  // Extract unique tags from posts
+  const uniqueTags = Array.from(new Set(
+    posts
+      .filter(post => Array.isArray(post.tags))
+      .flatMap(post => post.tags || [])
+      .filter(Boolean)
+  )).slice(0, 10);
+
   return (
     <section className="py-16 bg-white">
       <div className="container mx-auto px-4">

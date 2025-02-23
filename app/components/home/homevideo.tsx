@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import ImageWithFallback from '@/app/components/ImageWithFallback';
 import WatchMoreButton from '@/app/components/WatchMoreButton';
+import prisma from '@/lib/prisma';
 
 interface Video {
   id: string;
@@ -41,11 +42,45 @@ const getYouTubeThumbnail = (url: string) => {
   }
 };
 
-interface HomeVideoProps {
-  videos: Video[];
+async function getVideos() {
+  try {
+    const videos = await prisma.video.findMany({
+      where: { published: true },
+      orderBy: { createdAt: 'desc' },
+      take: 6,
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        youtubeUrl: true,
+        createdAt: true,
+        slug: true,
+        author: {
+          select: { name: true }
+        }
+      }
+    });
+
+    return videos.map(video => ({
+      ...video,
+      id: video.id || '',
+      title: video.title || 'Untitled Video',
+      description: video.description || '',
+      youtubeUrl: video.youtubeUrl || '',
+      createdAt: video.createdAt?.toString() || new Date().toISOString(),
+      author: {
+        name: video.author?.name || 'Anonymous'
+      }
+    }));
+  } catch (error) {
+    console.error('Error fetching videos:', error);
+    return [];
+  }
 }
 
-export default function HomeVideo({ videos }: HomeVideoProps) {
+export default async function HomeVideo() {
+  const videos = await getVideos();
+
   if (videos.length === 0) return null;
 
   return (

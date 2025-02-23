@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import ImageWithFallback from '@/app/components/ImageWithFallback';
+import prisma from '@/lib/prisma';
 
 interface Category {
   id: string;
@@ -41,11 +42,44 @@ const getImageUrl = (url: string | null) => {
   return url.startsWith('/') ? url : `/${url}`;
 };
 
-interface HomeCategoryProps {
-  categories: Category[];
+async function getCategories() {
+  try {
+    const categories = await prisma.postCategory.findMany({
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        thumbnail: true,
+        slug: true,
+        subcategories: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            thumbnail: true,
+            slug: true,
+          }
+        }
+      }
+    });
+
+    return categories.map(category => ({
+      ...category,
+      id: category.id || '',
+      title: category.title || 'Uncategorized',
+      description: category.description || '',
+      thumbnail: category.thumbnail || null,
+      subcategories: Array.isArray(category.subcategories) ? category.subcategories : []
+    }));
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    return [];
+  }
 }
 
-export default function HomeCategory({ categories }: HomeCategoryProps) {
+export default async function HomeCategory() {
+  const categories = await getCategories();
+
   return (
     <section className="py-20 bg-white">
       <div className="container mx-auto px-4">

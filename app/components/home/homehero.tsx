@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Poppins } from 'next/font/google';
 import MobileHero from '@/app/components/MobileHero';
 import ClientSideCarousel from '@/app/components/ClientSideCarousel';
+import prisma from '@/lib/prisma';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -54,11 +55,74 @@ const getImageUrl = (url: string | null) => {
   return url.startsWith('/') ? url : `/${url}`;
 };
 
-interface HomeHeroProps {
-  posts: Post[];
+async function getPosts(): Promise<Post[]> {
+  "use server"
+  try {
+    const posts = await prisma.post.findMany({
+      where: {
+        published: true,
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: 6,
+      select: {
+        id: true,
+        title: true,
+        excerpt: true,
+        thumbnail: true,
+        createdAt: true,
+        tags: true,
+        slug: true,
+        category: {
+          select: {
+            title: true,
+            slug: true,
+          }
+        },
+        subcategory: {
+          select: {
+            title: true,
+            slug: true,
+          }
+        },
+        author: {
+          select: {
+            name: true
+          }
+        }
+      }
+    });
+
+    return posts.map(post => ({
+      id: post.id,
+      title: post.title,
+      excerpt: post.excerpt || '',
+      thumbnail: post.thumbnail,
+      createdAt: post.createdAt.toISOString(),
+      tags: post.tags || [],
+      slug: post.slug,
+      category: post.category ? {
+        title: post.category.title,
+        slug: post.category.slug,
+      } : null,
+      subcategory: post.subcategory ? {
+        title: post.subcategory.title,
+        slug: post.subcategory.slug,
+      } : null,
+      author: {
+        name: post.author?.name || 'Anonymous'
+      }
+    }));
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    return [];
+  }
 }
 
-export default function HomeHero({ posts }: HomeHeroProps) {
+export default async function HomeHero() {
+  const posts = await getPosts();
+
   return (
     <section className="relative bg-gray-100">
       <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
