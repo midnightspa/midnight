@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import React from 'react';
 import Link from 'next/link';
 import { Poppins } from 'next/font/google';
@@ -6,7 +7,6 @@ import prisma from '@/lib/prisma';  // Import the centralized Prisma client
 import { generateStructuredData, getSiteSettings } from '@/lib/seo';
 import MobileHero from '@/app/components/MobileHero';
 import ImageWithFallback from '@/app/components/ImageWithFallback';
-import { Metadata } from 'next';
 import Script from 'next/script';
 import SearchArticles from '@/app/components/SearchArticles';
 import WatchMoreButton from '@/app/components/WatchMoreButton';
