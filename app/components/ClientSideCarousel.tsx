@@ -5,13 +5,25 @@ import Link from 'next/link';
 import ImageWithFallback from './ImageWithFallback';
 
 interface Props {
-  posts: any[];
-  getImageUrl: (url: string | null) => string;
-  shimmer: (w: number, h: number) => string;
-  toBase64: (str: string) => string;
+  posts: Array<{
+    id: string;
+    title: string;
+    excerpt: string;
+    thumbnailUrl: string;
+    createdAt: string;
+    slug: string;
+    category?: {
+      title: string;
+      slug: string;
+    };
+    author: {
+      name: string;
+    };
+  }>;
+  blurDataURL: string;
 }
 
-export default function ClientSideCarousel({ posts, getImageUrl, shimmer, toBase64 }: Props) {
+export default function ClientSideCarousel({ posts, blurDataURL }: Props) {
   return (
     <div className="w-[400px] relative h-[70vh] overflow-hidden">
       <div className="absolute inset-0">
@@ -27,13 +39,13 @@ export default function ClientSideCarousel({ posts, getImageUrl, shimmer, toBase
                 <div className="bg-white rounded-xl overflow-hidden shadow-lg w-[380px] hover:shadow-xl transition-shadow duration-300">
                   <div className="relative h-40">
                     <ImageWithFallback
-                      src={getImageUrl(post.thumbnail)}
+                      src={post.thumbnailUrl}
                       alt={post.title}
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       className="object-cover"
                       placeholder="blur"
-                      blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
+                      blurDataURL={blurDataURL}
                       priority={index < 2}
                     />
                     {post.category && (

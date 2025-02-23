@@ -1,2 +1,0 @@
-COPY public."Post" (id, title, slug, excerpt, content, thumbnail, published, "categoryId", "subcategoryId", tags, "seoTitle", "seoDescription", "seoKeywords", "createdAt", "updatedAt", "authorId") FROM stdin;
-\.

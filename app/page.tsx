@@ -148,7 +148,7 @@ async function getPosts(): Promise<Post[]> {
         p.title,
         p.excerpt,
         p.thumbnail,
-        p.created_at as "createdAt",
+        p."createdAt" as "createdAt",
         p.tags,
         p.slug,
         c.title as "categoryTitle",
@@ -157,11 +157,11 @@ async function getPosts(): Promise<Post[]> {
         sc.slug as "subcategorySlug",
         a.name as "authorName"
       FROM "Post" p
-      LEFT JOIN "PostCategory" c ON p.category_id = c.id
-      LEFT JOIN "PostSubCategory" sc ON p.subcategory_id = sc.id
-      LEFT JOIN "User" a ON p.author_id = a.id
+      LEFT JOIN "PostCategory" c ON p."categoryId" = c.id
+      LEFT JOIN "PostSubCategory" sc ON p."subcategoryId" = sc.id
+      LEFT JOIN "User" a ON p."authorId" = a.id
       WHERE p.published = true
-      ORDER BY p.created_at DESC
+      ORDER BY p."createdAt" DESC
       LIMIT 6
     `;
 
@@ -390,10 +390,19 @@ export default async function HomePage() {
 
               {/* Right side slider */}
               <ClientSideCarousel 
-                posts={sanitizedPosts} 
-                getImageUrl={getImageUrl}
-                shimmer={shimmer}
-                toBase64={toBase64}
+                posts={sanitizedPosts.map(post => ({
+                  id: post.id,
+                  title: post.title,
+                  excerpt: post.excerpt,
+                  thumbnailUrl: getImageUrl(post.thumbnail),
+                  createdAt: post.createdAt,
+                  slug: post.slug,
+                  category: post.category || undefined,
+                  author: {
+                    name: post.author.name
+                  }
+                }))} 
+                blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
               />
             </div>
           </section>

@@ -10,6 +10,7 @@ pm2 delete midnightspa || true
 rm -rf .next
 rm -rf node_modules/.cache
 rm -rf /tmp/.next-*
+rm -rf .next/cache/*
 npm cache clean --force
 
 # Pull latest changes
@@ -19,21 +20,29 @@ git pull
 rm -rf node_modules
 npm install
 
+# Install sharp globally
+npm install -g sharp
+
 # Generate Prisma client
 npx prisma generate
 
 # Build with cache disabled
 NEXT_DISABLE_CACHE=1 NODE_OPTIONS='--max_old_space_size=4096' npm run build
 
+# Clear any existing PM2 processes
+pm2 flush
+pm2 reset all
+
 # Start with PM2
 NODE_ENV=production \
 NEXT_RUNTIME=nodejs \
 NEXT_DISABLE_CACHE=1 \
 NEXT_TELEMETRY_DISABLED=1 \
-pm2 start npm --name "midnightspa" -- start -- -p 3000
+NEXT_SHARP_PATH=/usr/local/lib/node_modules/sharp \
+pm2 start ecosystem.config.js
 
 # Wait for the application to start
-sleep 5
+sleep 10
 
 # Display status
 pm2 list
