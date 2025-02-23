@@ -1,7 +1,7 @@
-// Add these export directives at the top to ensure dynamic rendering
-export const revalidate = 0;
+"use server"
+
+// Remove the problematic directives and use a single, stable configuration
 export const dynamic = 'force-dynamic';
-export const fetchCache = 'force-no-store';
 
 import React from 'react';
 import Link from 'next/link';
@@ -132,15 +132,9 @@ export async function generateMetadata() {
 
 async function getPosts(): Promise<Post[]> {
   try {
-    // Add timestamp to force fresh data
-    const now = new Date();
-    
     const posts = await prisma.post.findMany({
       where: {
         published: true,
-        updatedAt: {
-          lte: now  // This forces Prisma to not use cached results
-        }
       },
       orderBy: {
         createdAt: 'desc'
@@ -202,27 +196,13 @@ async function getPosts(): Promise<Post[]> {
 
 export default async function HomePage() {
   try {
-    // Add cache headers to prevent caching
-    const headers = {
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0',
-    };
-
-    const now = new Date();
-
-    // Fetch all data in parallel with timestamp to force fresh data
+    // Fetch all data in parallel
     const [settings, categories, subcategories, posts, videos] = await Promise.all([
       getSiteSettings().catch(error => {
         console.error('Error fetching settings:', error);
         return null;
       }),
       prisma.postCategory.findMany({
-        where: {
-          updatedAt: {
-            lte: now
-          }
-        },
         select: {
           id: true,
           title: true,
@@ -244,11 +224,6 @@ export default async function HomePage() {
         return [];
       }),
       prisma.postSubCategory.findMany({
-        where: {
-          updatedAt: {
-            lte: now
-          }
-        },
         select: {
           id: true,
           title: true,
@@ -274,12 +249,7 @@ export default async function HomePage() {
       }),
       getPosts(),
       prisma.video.findMany({
-        where: { 
-          published: true,
-          updatedAt: {
-            lte: now
-          }
-        },
+        where: { published: true },
         orderBy: { createdAt: 'desc' },
         take: 6,
         select: {
