@@ -1,8 +1,3 @@
-"use server"
-
-// Remove the problematic directives and use a single, stable configuration
-export const dynamic = 'force-dynamic';
-
 import React from 'react';
 import Link from 'next/link';
 import { Poppins } from 'next/font/google';
@@ -15,6 +10,10 @@ import Script from 'next/script';
 import SearchArticles from '@/app/components/SearchArticles';
 import WatchMoreButton from '@/app/components/WatchMoreButton';
 import ClientSideCarousel from '@/app/components/ClientSideCarousel';
+
+// Add the configuration at the top level
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -98,6 +97,7 @@ const getImageUrl = (url: string | null) => {
 };
 
 async function getLatestVideos() {
+  "use server"
   try {
     return await prisma.video.findMany({
       where: {
@@ -131,6 +131,7 @@ export async function generateMetadata() {
 }
 
 async function getPosts(): Promise<Post[]> {
+  "use server"
   try {
     const posts = await prisma.post.findMany({
       where: {
@@ -195,6 +196,7 @@ async function getPosts(): Promise<Post[]> {
 }
 
 export default async function HomePage() {
+  "use server"
   try {
     // Fetch all data in parallel
     const [settings, categories, subcategories, posts, videos] = await Promise.all([
