@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import ImageWithFallback from '@/app/components/ImageWithFallback';
 import prisma from '@/lib/prisma';
+import { unstable_noStore as noStore } from 'next/cache';
 
 interface Category {
   id: string;
@@ -43,6 +44,7 @@ const getImageUrl = (url: string | null) => {
 };
 
 async function getCategories() {
+  noStore(); // Opt out of caching
   try {
     const categories = await prisma.postCategory.findMany({
       select: {

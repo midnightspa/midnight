@@ -3,6 +3,7 @@ import Link from 'next/link';
 import ImageWithFallback from '@/app/components/ImageWithFallback';
 import SearchArticles from '@/app/components/SearchArticles';
 import prisma from '@/lib/prisma';
+import { unstable_noStore as noStore } from 'next/cache';
 
 interface Post {
   id: string;
@@ -50,6 +51,7 @@ const getImageUrl = (url: string | null) => {
 };
 
 async function getPosts(): Promise<Post[]> {
+  noStore(); // Opt out of caching
   try {
     const posts = await prisma.post.findMany({
       where: {
@@ -114,6 +116,7 @@ async function getPosts(): Promise<Post[]> {
 }
 
 async function getSubcategories() {
+  noStore(); // Opt out of caching
   try {
     const subcategories = await prisma.postSubCategory.findMany({
       select: {

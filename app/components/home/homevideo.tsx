@@ -3,6 +3,7 @@ import Link from 'next/link';
 import ImageWithFallback from '@/app/components/ImageWithFallback';
 import WatchMoreButton from '@/app/components/WatchMoreButton';
 import prisma from '@/lib/prisma';
+import { unstable_noStore as noStore } from 'next/cache';
 
 interface Video {
   id: string;
@@ -43,6 +44,7 @@ const getYouTubeThumbnail = (url: string) => {
 };
 
 async function getVideos() {
+  noStore(); // Opt out of caching
   try {
     const videos = await prisma.video.findMany({
       where: { published: true },

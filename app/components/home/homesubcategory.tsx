@@ -1,6 +1,7 @@
 import React from 'react';
 import SubCatCarousel from '@/components/SubCatCarousel';
 import prisma from '@/lib/prisma';
+import { unstable_noStore as noStore } from 'next/cache';
 
 interface SubCategory {
   id: string;
@@ -19,6 +20,7 @@ interface SubCategory {
 }
 
 async function getSubcategories() {
+  noStore(); // Opt out of caching
   try {
     const subcategories = await prisma.postSubCategory.findMany({
       select: {

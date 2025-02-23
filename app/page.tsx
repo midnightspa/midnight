@@ -7,6 +7,7 @@ import HomeCategory from '@/app/components/home/homecategory';
 import HomeSubcategory from '@/app/components/home/homesubcategory';
 import HomeVideo from '@/app/components/home/homevideo';
 import HomePost from '@/app/components/home/homepost';
+import { unstable_noStore as noStore } from 'next/cache';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -21,6 +22,9 @@ export async function generateMetadata() {
 }
 
 export default async function HomePage() {
+  // Opt out of caching for all data fetches in this component
+  noStore();
+
   const settings = await getSiteSettings().catch(error => {
     console.error('Error fetching settings:', error);
     return null;
