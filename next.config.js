@@ -24,10 +24,10 @@ const nextConfig = {
       },
       {
         protocol: 'http',
-        hostname: '5.161.86.130'
+        hostname: '5.78.70.244'
       }
     ],
-    domains: ['5.161.86.130', 'themidnightspa.com', 'localhost'],
+    domains: ['5.78.70.244', 'themidnightspa.com', 'localhost'],
     unoptimized: true
   },
   eslint: {
@@ -38,7 +38,7 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000', '5.161.86.130', 'themidnightspa.com'],
+      allowedOrigins: ['localhost:3000', '5.78.70.244', 'themidnightspa.com'],
       bodySizeLimit: '2mb'
     },
     optimizePackageImports: ['@heroicons/react'],
