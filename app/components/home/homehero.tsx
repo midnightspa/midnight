@@ -4,7 +4,6 @@ import { Poppins } from 'next/font/google';
 import MobileHero from '@/app/components/MobileHero';
 import ClientSideCarousel from '@/app/components/ClientSideCarousel';
 import prisma from '@/lib/prisma';
-import { unstable_noStore as noStore } from 'next/cache';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -57,7 +56,7 @@ const getImageUrl = (url: string | null) => {
 };
 
 async function getPosts(): Promise<Post[]> {
-  noStore(); // Opt out of caching
+  "use server"
   try {
     const posts = await prisma.post.findMany({
       where: {
