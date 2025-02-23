@@ -6,16 +6,16 @@ export interface Post {
   createdAt: string;
   tags: string[];
   slug: string;
-  category?: {
+  category: {
     title: string;
     slug: string;
   } | null;
-  subcategory?: {
+  subcategory: {
     title: string;
     slug: string;
   } | null;
   author: {
-    name: string;
+    name: string | null;
   };
 }
 
@@ -25,7 +25,13 @@ export interface Category {
   description: string | null;
   thumbnail: string | null;
   slug: string;
-  subcategories: SubCategory[];
+  subcategories: {
+    id: string;
+    title: string;
+    description: string | null;
+    thumbnail: string | null;
+    slug: string;
+  }[];
 }
 
 export interface SubCategory {
@@ -34,7 +40,6 @@ export interface SubCategory {
   description: string | null;
   thumbnail: string | null;
   slug: string;
-  categoryId: string;
   category: {
     id: string;
     title: string;
