@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
 import { Poppins } from 'next/font/google';
 import SubCatCarousel from '@/components/SubCatCarousel';
@@ -71,6 +71,19 @@ interface SubCategory {
   };
 }
 
+interface SiteSettings {
+  id: string;
+  siteName: string | null;
+  siteTitle: string | null;
+  siteDescription: string | null;
+  siteKeywords: string | null;
+  favicon: string | null;
+  ogImage: string | null;
+  twitterHandle: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 const shimmer = (w: number, h: number) => `
 <svg width="${w}" height="${h}" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <defs>
@@ -95,30 +108,15 @@ const getImageUrl = (url: string | null) => {
   return url.startsWith('/') ? url : `/${url}`;
 };
 
-async function getLatestVideos() {
+const getYouTubeThumbnail = (url: string) => {
   try {
-    return await prisma.video.findMany({
-      where: {
-        published: true,
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 6,
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        youtubeUrl: true,
-        createdAt: true,
-        slug: true,
-      },
-    });
+    const videoId = url.split('v=')[1]?.split('&')[0];
+    return videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : DEFAULT_THUMBNAIL;
   } catch (error) {
-    console.error('Error fetching latest videos:', error);
-    return [];
+    console.error('Error getting YouTube thumbnail:', error);
+    return DEFAULT_THUMBNAIL;
   }
-}
+};
 
 // Simplify metadata
 export async function generateMetadata() {
@@ -128,80 +126,11 @@ export async function generateMetadata() {
   }
 }
 
-async function getPosts(): Promise<Post[]> {
-  "use server"
-  try {
-    const posts = await prisma.post.findMany({
-      where: {
-        published: true,
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 6,
-      select: {
-        id: true,
-        title: true,
-        excerpt: true,
-        thumbnail: true,
-        createdAt: true,
-        tags: true,
-        slug: true,
-        category: {
-          select: {
-            title: true,
-            slug: true,
-          }
-        },
-        subcategory: {
-          select: {
-            title: true,
-            slug: true,
-          }
-        },
-        author: {
-          select: {
-            name: true
-          }
-        }
-      }
-    });
-
-    return posts.map(post => ({
-      id: post.id,
-      title: post.title,
-      excerpt: post.excerpt || '',
-      thumbnail: post.thumbnail,
-      createdAt: post.createdAt.toISOString(),
-      tags: post.tags || [],
-      slug: post.slug,
-      category: post.category ? {
-        title: post.category.title,
-        slug: post.category.slug,
-      } : null,
-      subcategory: post.subcategory ? {
-        title: post.subcategory.title,
-        slug: post.subcategory.slug,
-      } : null,
-      author: {
-        name: post.author?.name || 'Anonymous'
-      }
-    }));
-  } catch (error) {
-    console.error('Error fetching posts:', error);
-    return [];
-  }
-}
-
 export default async function HomePage() {
-  "use server"
   try {
     // Fetch all data in parallel
-    const [settings, categories, subcategories, posts, videos] = await Promise.all([
-      getSiteSettings().catch(error => {
-        console.error('Error fetching settings:', error);
-        return null;
-      }),
+    const [settingsData, categoriesData, subcategoriesData, postsData, videosData] = await Promise.all([
+      getSiteSettings(),
       prisma.postCategory.findMany({
         select: {
           id: true,
@@ -219,9 +148,6 @@ export default async function HomePage() {
             }
           }
         }
-      }).catch(error => {
-        console.error('Error fetching categories:', error);
-        return [];
       }),
       prisma.postSubCategory.findMany({
         select: {
@@ -243,11 +169,36 @@ export default async function HomePage() {
             }
           }
         }
-      }).catch(error => {
-        console.error('Error fetching subcategories:', error);
-        return [];
       }),
-      getPosts(),
+      prisma.post.findMany({
+        where: { published: true },
+        orderBy: { createdAt: 'desc' },
+        take: 6,
+        select: {
+          id: true,
+          title: true,
+          excerpt: true,
+          thumbnail: true,
+          createdAt: true,
+          tags: true,
+          slug: true,
+          category: {
+            select: {
+              title: true,
+              slug: true,
+            }
+          },
+          subcategory: {
+            select: {
+              title: true,
+              slug: true,
+            }
+          },
+          author: {
+            select: { name: true }
+          }
+        }
+      }),
       prisma.video.findMany({
         where: { published: true },
         orderBy: { createdAt: 'desc' },
@@ -263,11 +214,17 @@ export default async function HomePage() {
             select: { name: true }
           }
         }
-      }).catch(error => {
-        console.error('Error fetching videos:', error);
-        return [];
       })
-    ]);
+    ]).catch(error => {
+      console.error('Error fetching data:', error);
+      return [null, [], [], [], []];
+    });
+
+    // Default empty arrays if data is null
+    const posts = postsData || [];
+    const categories = categoriesData || [];
+    const subcategories = subcategoriesData || [];
+    const videos = videosData || [];
 
     // Safely extract unique tags from posts
     const uniqueTags = Array.from(new Set(
@@ -277,7 +234,6 @@ export default async function HomePage() {
         .filter(Boolean)
     )).slice(0, 10);
 
-    // Ensure all required data is present and handle missing data gracefully
     const sanitizedPosts = posts.map(post => ({
       ...post,
       id: post.id || '',
@@ -325,22 +281,14 @@ export default async function HomePage() {
       }
     }));
 
-    const getYouTubeThumbnail = (url: string) => {
-      try {
-        const videoId = url.split('v=')[1]?.split('&')[0];
-        return videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : DEFAULT_THUMBNAIL;
-      } catch (error) {
-        console.error('Error getting YouTube thumbnail:', error);
-        return DEFAULT_THUMBNAIL;
-      }
-    };
+    const settings = settingsData as SiteSettings | null;
 
     const structuredData = generateStructuredData({
-      organizationName: settings?.organizationName || undefined,
-      organizationLogo: settings?.organizationLogo || undefined,
-      contactPhone: settings?.contactPhone || undefined,
-      contactEmail: settings?.contactEmail || undefined,
-      contactAddress: settings?.contactAddress || undefined
+      organizationName: settings?.siteName || undefined,
+      organizationLogo: settings?.favicon || undefined,
+      contactPhone: undefined,
+      contactEmail: undefined,
+      contactAddress: undefined
     });
 
     return (
