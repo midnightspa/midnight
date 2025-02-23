@@ -28,7 +28,7 @@ export async function getServerSideProps() {
   }
 }
 
-export default function HomePage({ settings }) {
+export default function HomePage({ settings }: { settings: any }) {
   if (!settings) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white text-red-500">
