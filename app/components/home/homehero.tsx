@@ -61,8 +61,11 @@ const getImageUrl = (url: string | null) => {
 };
 
 async function getPosts(): Promise<Post[]> {
-  noStore();
   try {
+    console.log('[HomeHero] Starting getPosts function');
+    noStore();
+    
+    console.log('[HomeHero] Attempting to fetch posts from database');
     const posts = await prisma.post.findMany({
       where: {
         published: true,
@@ -97,88 +100,139 @@ async function getPosts(): Promise<Post[]> {
           }
         }
       }
+    }).catch((error: Error & { code?: string }) => {
+      console.error('[HomeHero] Database query error:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      throw error;
     });
 
-    return posts.map((post: any) => ({
-      id: post.id,
-      title: post.title,
-      excerpt: post.excerpt || '',
-      thumbnail: post.thumbnail,
-      createdAt: post.createdAt.toISOString(),
-      tags: post.tags || [],
-      slug: post.slug,
-      category: post.category ? {
-        title: post.category.title,
-        slug: post.category.slug,
-      } : null,
-      subcategory: post.subcategory ? {
-        title: post.subcategory.title,
-        slug: post.subcategory.slug,
-      } : null,
-      author: {
-        name: post.author?.name || 'Anonymous'
+    console.log(`[HomeHero] Successfully fetched ${posts.length} posts`);
+
+    return posts.map((post: any) => {
+      try {
+        return {
+          id: post.id,
+          title: post.title,
+          excerpt: post.excerpt || '',
+          thumbnail: post.thumbnail,
+          createdAt: post.createdAt.toISOString(),
+          tags: post.tags || [],
+          slug: post.slug,
+          category: post.category ? {
+            title: post.category.title,
+            slug: post.category.slug,
+          } : null,
+          subcategory: post.subcategory ? {
+            title: post.subcategory.title,
+            slug: post.subcategory.slug,
+          } : null,
+          author: {
+            name: post.author?.name || 'Anonymous'
+          }
+        };
+      } catch (error) {
+        const err = error as Error;
+        console.error('[HomeHero] Error mapping post:', {
+          postId: post?.id,
+          error: err.message,
+          stack: err.stack,
+          postData: JSON.stringify(post, null, 2)
+        });
+        throw err;
       }
-    }));
+    });
   } catch (error) {
-    console.error('Error fetching posts:', error);
+    const err = error as Error;
+    console.error('[HomeHero] Fatal error in getPosts:', {
+      message: err.message,
+      stack: err.stack,
+      type: err.constructor.name
+    });
     return [];
   }
 }
 
 export default async function HomeHero() {
-  const posts = await getPosts();
+  try {
+    console.log('[HomeHero] Component rendering started');
+    const posts = await getPosts();
+    console.log('[HomeHero] Posts fetched successfully, rendering component');
 
-  return (
-    <section className="relative bg-gray-100">
-      <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
-      
-      {/* Mobile Hero */}
-      <MobileHero posts={posts} />
+    return (
+      <section className="relative bg-gray-100">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
+        
+        {/* Mobile Hero */}
+        <MobileHero posts={posts} />
 
-      {/* Desktop & Tablet Hero */}
-      <div className="hidden lg:flex container mx-auto px-4 h-[70vh] items-center justify-between relative overflow-hidden">
-        {/* Left side content */}
-        <div className="max-w-xl relative z-10">
-          <div className="absolute -top-10 -left-10 w-20 h-20 bg-neutral-900 rounded-full opacity-5"></div>
-          <h1 className="text-6xl font-bold text-neutral-900 mb-6 leading-tight">
-            Dream Beyond <span className="text-neutral-700">Limits</span>
-          </h1>
-          <p className="text-xl text-neutral-600 mb-8 leading-relaxed">
-            Discover tips, insights, and practices to reclaim your nights and embrace tranquility.
-          </p>
-          <div className="flex gap-4">
-            <Link
-              href="/categories"
-              className="inline-flex items-center px-8 py-4 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-all transform hover:scale-105 shadow-lg"
-            >
-              Explore Categories
-            </Link>
-            <Link
-              href="/videos"
-              className="inline-flex items-center px-8 py-4 bg-white text-neutral-900 rounded-lg hover:bg-neutral-50 transition-all transform hover:scale-105 shadow-lg border border-neutral-200"
-            >
-              Watch Videos
-            </Link>
+        {/* Desktop & Tablet Hero */}
+        <div className="hidden lg:flex container mx-auto px-4 h-[70vh] items-center justify-between relative overflow-hidden">
+          {/* Left side content */}
+          <div className="max-w-xl relative z-10">
+            <div className="absolute -top-10 -left-10 w-20 h-20 bg-neutral-900 rounded-full opacity-5"></div>
+            <h1 className="text-6xl font-bold text-neutral-900 mb-6 leading-tight">
+              Dream Beyond <span className="text-neutral-700">Limits</span>
+            </h1>
+            <p className="text-xl text-neutral-600 mb-8 leading-relaxed">
+              Discover tips, insights, and practices to reclaim your nights and embrace tranquility.
+            </p>
+            <div className="flex gap-4">
+              <Link
+                href="/categories"
+                className="inline-flex items-center px-8 py-4 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-all transform hover:scale-105 shadow-lg"
+              >
+                Explore Categories
+              </Link>
+              <Link
+                href="/videos"
+                className="inline-flex items-center px-8 py-4 bg-white text-neutral-900 rounded-lg hover:bg-neutral-50 transition-all transform hover:scale-105 shadow-lg border border-neutral-200"
+              >
+                Watch Videos
+              </Link>
+            </div>
           </div>
-        </div>
 
-        {/* Right side slider */}
-        <ClientSideCarousel 
-          posts={posts.map((post: Post) => ({
-            id: post.id,
-            title: post.title,
-            excerpt: post.excerpt,
-            thumbnailUrl: getImageUrl(post.thumbnail),
-            createdAt: post.createdAt,
-            slug: post.slug,
-            category: post.category || undefined,
-            author: {
-              name: post.author.name
-            }
-          }))} 
-          blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
-        />
-      </div>
-    </section>
-  );
+          {/* Right side slider */}
+          <ClientSideCarousel 
+            posts={posts.map((post: Post) => {
+              try {
+                return {
+                  id: post.id,
+                  title: post.title,
+                  excerpt: post.excerpt,
+                  thumbnailUrl: getImageUrl(post.thumbnail),
+                  createdAt: post.createdAt,
+                  slug: post.slug,
+                  category: post.category || undefined,
+                  author: {
+                    name: post.author.name
+                  }
+                };
+              } catch (error) {
+                const err = error as Error;
+                console.error('[HomeHero] Error mapping post for carousel:', {
+                  postId: post?.id,
+                  error: err.message,
+                  stack: err.stack
+                });
+                throw err;
+              }
+            })} 
+            blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
+          />
+        </div>
+      </section>
+    );
+  } catch (error) {
+    const err = error as Error;
+    console.error('[HomeHero] Error rendering component:', {
+      message: err.message,
+      stack: err.stack,
+      type: err.constructor.name
+    });
+    return <div>Error loading content. Please try again later.</div>;
+  }
 }
