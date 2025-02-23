@@ -118,71 +118,74 @@ async function getLatestVideos() {
   }
 }
 
-// Force dynamic rendering and disable all caching
-export const dynamic = 'force-dynamic'
-export const fetchCache = 'force-no-store'
-export const revalidate = 0
-
-// Disable static metadata
+// Simplify metadata
 export async function generateMetadata() {
   return {
     title: 'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness',
     description: 'Discover luxury spa treatments, wellness tips, and relaxation techniques at Midnight Spa.',
-    other: {
-      'Cache-Control': 'no-store, no-cache, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0',
-    },
   }
 }
 
 async function getPosts(): Promise<Post[]> {
   try {
-    // Add cache busting query parameter
-    const timestamp = Date.now();
+    // Remove cache busting timestamp
+    // const timestamp = Date.now();
     
-    // Use direct database query with no caching
-    const posts = await prisma.$queryRaw`
-      SELECT 
-        p.id,
-        p.title,
-        p.excerpt,
-        p.thumbnail,
-        p."createdAt" as "createdAt",
-        p.tags,
-        p.slug,
-        c.title as "categoryTitle",
-        c.slug as "categorySlug",
-        sc.title as "subcategoryTitle",
-        sc.slug as "subcategorySlug",
-        a.name as "authorName"
-      FROM "Post" p
-      LEFT JOIN "PostCategory" c ON p."categoryId" = c.id
-      LEFT JOIN "PostSubCategory" sc ON p."subcategoryId" = sc.id
-      LEFT JOIN "User" a ON p."authorId" = a.id
-      WHERE p.published = true
-      ORDER BY p."createdAt" DESC
-      LIMIT 6
-    `;
+    // Use normal Prisma query instead of raw query
+    const posts = await prisma.post.findMany({
+      where: {
+        published: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: 6,
+      select: {
+        id: true,
+        title: true,
+        excerpt: true,
+        thumbnail: true,
+        createdAt: true,
+        tags: true,
+        slug: true,
+        category: {
+          select: {
+            title: true,
+            slug: true,
+          }
+        },
+        subcategory: {
+          select: {
+            title: true,
+            slug: true,
+          }
+        },
+        author: {
+          select: {
+            name: true
+          }
+        }
+      }
+    });
 
-    return (posts as any[]).map(post => ({
+    return posts.map(post => ({
       id: post.id,
       title: post.title,
       excerpt: post.excerpt || '',
       thumbnail: post.thumbnail,
-      createdAt: new Date(post.createdAt).toISOString(),
+      createdAt: post.createdAt.toISOString(),
       tags: post.tags || [],
       slug: post.slug,
-      category: post.categoryTitle ? {
-        title: post.categoryTitle,
-        slug: post.categorySlug,
+      category: post.category ? {
+        title: post.category.title,
+        slug: post.category.slug,
       } : null,
-      subcategory: post.subcategoryTitle ? {
-        title: post.subcategoryTitle,
-        slug: post.subcategorySlug,
+      subcategory: post.subcategory ? {
+        title: post.subcategory.title,
+        slug: post.subcategory.slug,
       } : null,
       author: {
-        name: post.authorName || 'Anonymous'
+        name: post.author?.name || 'Anonymous'
       }
     }));
   } catch (error) {
@@ -192,11 +195,11 @@ async function getPosts(): Promise<Post[]> {
 }
 
 export default async function HomePage() {
-  // Add response headers to prevent caching
-  const headers = new Headers();
-  headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-  headers.set('Pragma', 'no-cache');
-  headers.set('Expires', '0');
+  // Remove cache control headers
+  // const headers = new Headers();
+  // headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  // headers.set('Pragma', 'no-cache');
+  // headers.set('Expires', '0');
 
   try {
     // Fetch all data in parallel
