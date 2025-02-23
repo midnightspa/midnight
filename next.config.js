@@ -57,15 +57,19 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate'
+            value: 'public, max-age=120, must-revalidate, s-maxage=120'
           },
           {
-            key: 'Pragma',
-            value: 'no-cache'
+            key: 'CDN-Cache-Control',
+            value: 'max-age=120'
           },
           {
-            key: 'Expires',
-            value: '0'
+            key: 'Cloudflare-CDN-Cache-Control',
+            value: 'max-age=120'
+          },
+          {
+            key: 'Vary',
+            value: 'Accept-Encoding, x-user-agent'
           }
         ]
       }
