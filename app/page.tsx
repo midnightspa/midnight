@@ -7,18 +7,13 @@ import HomeCategory from '@/app/components/home/homecategory';
 import HomeSubcategory from '@/app/components/home/homesubcategory';
 import HomeVideo from '@/app/components/home/homevideo';
 import HomePost from '@/app/components/home/homepost';
-import { unstable_noStore as noStore } from 'next/cache';
 
 const poppins = Poppins({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
 });
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 export async function generateMetadata() {
-  noStore();
   return {
     title: 'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness',
     description: 'Discover luxury spa treatments, wellness tips, and relaxation techniques at Midnight Spa.',
@@ -26,8 +21,6 @@ export async function generateMetadata() {
 }
 
 export default async function HomePage() {
-  noStore();
-  
   const settings = await getSiteSettings().catch(error => {
     console.error('Error fetching settings:', error);
     return null;
