@@ -13,34 +13,48 @@ const poppins = Poppins({
   weight: ['400', '500', '600', '700'],
 });
 
-export async function generateMetadata() {
-  return {
-    title: 'Midnight Spa - Your Ultimate Destination for Relaxation and Wellness',
-    description: 'Discover luxury spa treatments, wellness tips, and relaxation techniques at Midnight Spa.',
+// Fetch site settings dynamically on each request
+export async function getServerSideProps() {
+  try {
+    const settings = await getSiteSettings();
+    return {
+      props: { settings },
+    };
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    return {
+      props: { settings: null },
+    };
   }
 }
 
-export default async function HomePage() {
-  const settings = await getSiteSettings().catch(error => {
-    console.error('Error fetching settings:', error);
-    return null;
-  });
+export default function HomePage({ settings }) {
+  if (!settings) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white text-red-500">
+        <p>Error loading site settings. Please try again later.</p>
+      </div>
+    );
+  }
 
   const structuredData = generateStructuredData({
     organizationName: settings?.organizationName || undefined,
     organizationLogo: settings?.organizationLogo || undefined,
     contactPhone: settings?.contactPhone || undefined,
     contactEmail: settings?.contactEmail || undefined,
-    contactAddress: settings?.contactAddress || undefined
+    contactAddress: settings?.contactAddress || undefined,
   });
 
   return (
     <>
+      {/* Structured Data for SEO */}
       <Script
         id="structured-data"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
+      
+      {/* Main Page Content */}
       <div className={`min-h-screen bg-white ${poppins.className}`}>
         <HomeHero />
         <HomeCategory />
