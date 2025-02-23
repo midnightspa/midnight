@@ -2,20 +2,20 @@ import React from 'react';
 import Link from 'next/link';
 import ImageWithFallback from '@/app/components/ImageWithFallback';
 import prisma from '@/lib/prisma';
+import { Poppins } from 'next/font/google';
+import { unstable_noStore as noStore } from 'next/cache';
+
+const poppins = Poppins({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+});
 
 interface Category {
   id: string;
   title: string;
-  description: string;
-  thumbnail: string | null;
   slug: string;
-  subcategories: {
-    id: string;
-    title: string;
-    description: string | null;
-    thumbnail: string | null;
-    slug: string;
-  }[];
+  thumbnail: string | null;
+  postCount: number;
 }
 
 const shimmer = (w: number, h: number) => `
@@ -42,34 +42,29 @@ const getImageUrl = (url: string | null) => {
   return url.startsWith('/') ? url : `/${url}`;
 };
 
-async function getCategories() {
+async function getCategories(): Promise<Category[]> {
+  noStore();
   try {
     const categories = await prisma.postCategory.findMany({
       select: {
         id: true,
         title: true,
-        description: true,
-        thumbnail: true,
         slug: true,
-        subcategories: {
+        thumbnail: true,
+        posts: {
           select: {
-            id: true,
-            title: true,
-            description: true,
-            thumbnail: true,
-            slug: true,
+            id: true
           }
         }
       }
     });
 
-    return categories.map(category => ({
-      ...category,
-      id: category.id || '',
-      title: category.title || 'Uncategorized',
-      description: category.description || '',
-      thumbnail: category.thumbnail || null,
-      subcategories: Array.isArray(category.subcategories) ? category.subcategories : []
+    return categories.map((category) => ({
+      id: category.id,
+      title: category.title,
+      slug: category.slug,
+      thumbnail: category.thumbnail,
+      postCount: category.posts.length
     }));
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -111,14 +106,11 @@ export default async function HomeCategory() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </div>
               <div className="flex items-center gap-2 mb-3">
-                {category.subcategories.length > 0 && (
-                  <span className="px-3 py-1 bg-neutral-200 text-neutral-600 text-sm rounded-full">
-                    {category.subcategories.length} subcategories
-                  </span>
-                )}
+                <span className="px-3 py-1 bg-neutral-200 text-neutral-600 text-sm rounded-full">
+                  {category.postCount} posts
+                </span>
               </div>
               <h3 className="text-xl font-semibold text-neutral-900 mb-2">{category.title}</h3>
-              <p className="text-neutral-600 mb-4 line-clamp-2">{category.description}</p>
               <Link href={`/categories/${category.slug}`} className="inline-flex items-center text-neutral-900 font-medium hover:gap-2 transition-all">
                 <span>Explore</span>
                 <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

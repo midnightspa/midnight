@@ -4,6 +4,7 @@ import { Poppins } from 'next/font/google';
 import MobileHero from '@/app/components/MobileHero';
 import ClientSideCarousel from '@/app/components/ClientSideCarousel';
 import prisma from '@/lib/prisma';
+import { unstable_noStore as noStore } from 'next/cache';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -31,6 +32,10 @@ interface Post {
   };
 }
 
+interface HomeHeroProps {
+  posts: Post[];
+}
+
 const shimmer = (w: number, h: number) => `
 <svg width="${w}" height="${h}" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <defs>
@@ -56,7 +61,7 @@ const getImageUrl = (url: string | null) => {
 };
 
 async function getPosts(): Promise<Post[]> {
-  "use server"
+  noStore();
   try {
     const posts = await prisma.post.findMany({
       where: {
@@ -94,7 +99,7 @@ async function getPosts(): Promise<Post[]> {
       }
     });
 
-    return posts.map(post => ({
+    return posts.map((post: any) => ({
       id: post.id,
       title: post.title,
       excerpt: post.excerpt || '',
@@ -159,7 +164,7 @@ export default async function HomeHero() {
 
         {/* Right side slider */}
         <ClientSideCarousel 
-          posts={posts.map(post => ({
+          posts={posts.map((post: Post) => ({
             id: post.id,
             title: post.title,
             excerpt: post.excerpt,
