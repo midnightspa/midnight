@@ -1,5 +1,3 @@
-"use server"
-
 // Add these export directives at the top to ensure dynamic rendering
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
