@@ -11,9 +11,8 @@ import SearchArticles from '@/app/components/SearchArticles';
 import WatchMoreButton from '@/app/components/WatchMoreButton';
 import ClientSideCarousel from '@/app/components/ClientSideCarousel';
 
-// Add the configuration at the top level
+// Single configuration for dynamic page
 export const dynamic = 'force-dynamic';
-export const fetchCache = 'force-no-store';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -97,7 +96,6 @@ const getImageUrl = (url: string | null) => {
 };
 
 async function getLatestVideos() {
-  "use server"
   try {
     return await prisma.video.findMany({
       where: {
