@@ -56,6 +56,7 @@ export default function PostForm({ postId, initialData }: PostFormProps) {
   const [tags, setTags] = useState<string[]>(initialData?.tags || []);
   const [tagInput, setTagInput] = useState('');
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(initialData?.thumbnail || null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(initialData?.thumbnail || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -152,31 +153,41 @@ export default function PostForm({ postId, initialData }: PostFormProps) {
     const file = e.target.files?.[0];
     if (file) {
       try {
-        // Create FormData and append the file
+        // Show preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setThumbnailPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+
+        // Upload file
         const formData = new FormData();
         formData.append('file', file);
 
-        // Upload the file
         const response = await fetch('/api/upload', {
           method: 'POST',
           body: formData,
         });
 
         if (!response.ok) {
-          throw new Error('Failed to upload image');
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to upload thumbnail');
         }
 
         const data = await response.json();
-        
-        if (data.success && data.filename) {
-          // Update the thumbnail preview with the new URL
-          setThumbnailPreview(data.filename);
-        } else {
-          throw new Error('Invalid response from server');
+        if (!data.success || !data.filename) {
+          throw new Error('Failed to get upload URL');
         }
+
+        // Store the thumbnail URL in state - ensure it starts with /uploads/
+        const thumbnailPath = data.filename.startsWith('/uploads/') 
+          ? data.filename 
+          : `/uploads/${data.filename.split('/uploads/').pop()}`;
+        setThumbnailUrl(thumbnailPath);
+
       } catch (error) {
-        console.error('Error uploading image:', error);
-        setError(error instanceof Error ? error.message : 'Failed to upload image');
+        console.error('Error uploading thumbnail:', error);
+        setError(error instanceof Error ? error.message : 'Failed to upload thumbnail');
       }
     }
   };
@@ -227,7 +238,7 @@ export default function PostForm({ postId, initialData }: PostFormProps) {
         seoDescription: formData.get('seoDescription'),
         seoKeywords: formData.get('seoKeywords'),
         published: formElement.querySelector<HTMLInputElement>('input[name="published"]')?.checked || false,
-        thumbnail: thumbnailPreview
+        thumbnail: thumbnailUrl // Use the stored thumbnail URL
       };
 
       const response = await fetch(`/api/posts/${postId}`, {
@@ -396,11 +407,16 @@ export default function PostForm({ postId, initialData }: PostFormProps) {
           </label>
           <input
             type="file"
-            name="thumbnail"
+            name="thumbnail-file"
             id="thumbnail"
             accept="image/*"
             onChange={handleImageChange}
-            className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            className="mt-1 block w-full text-sm text-gray-500
+              file:mr-4 file:py-2 file:px-4
+              file:rounded-md file:border-0
+              file:text-sm file:font-semibold
+              file:bg-blue-50 file:text-blue-700
+              hover:file:bg-blue-100"
           />
           {thumbnailPreview && (
             <div className="mt-2">
@@ -411,6 +427,11 @@ export default function PostForm({ postId, initialData }: PostFormProps) {
               />
             </div>
           )}
+          <input
+            type="hidden"
+            name="thumbnail"
+            value={thumbnailUrl || ''}
+          />
         </div>
 
         <div>
