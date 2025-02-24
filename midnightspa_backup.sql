@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.16 (Homebrew)
+-- Dumped from database version 15.10 (Homebrew)
 -- Dumped by pg_dump version 15.10 (Homebrew)
 
 SET statement_timeout = 0;
@@ -366,38 +366,6 @@ CREATE TABLE public."SeoIndexingLog" (
 ALTER TABLE public."SeoIndexingLog" OWNER TO mounirbennassar;
 
 --
--- Name: SiteSettings; Type: TABLE; Schema: public; Owner: mounirbennassar
---
-
-CREATE TABLE public."SiteSettings" (
-    id text NOT NULL,
-    "siteName" text,
-    "siteTitle" text,
-    "siteDescription" text,
-    "siteKeywords" text,
-    "ogTitle" text,
-    "ogDescription" text,
-    "ogImage" text,
-    "twitterHandle" text,
-    "twitterCardType" text,
-    "organizationName" text,
-    "organizationLogo" text,
-    "contactEmail" text,
-    "contactPhone" text,
-    "contactAddress" text,
-    "googleAnalyticsId" text,
-    "googleSiteVerification" text,
-    "robotsTxt" text,
-    "sitemapXml" text,
-    favicon text,
-    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "updatedAt" timestamp(3) without time zone NOT NULL
-);
-
-
-ALTER TABLE public."SiteSettings" OWNER TO mounirbennassar;
-
---
 -- Name: StaticPageSeo; Type: TABLE; Schema: public; Owner: mounirbennassar
 --
 
@@ -522,7 +490,7 @@ CREATE TABLE public._prisma_migrations (
 ALTER TABLE public._prisma_migrations OWNER TO mounirbennassar;
 
 --
--- Name: site_settings; Type: TABLE; Schema: public; Owner: mounirbennassar
+-- Name: site_settings; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.site_settings (
@@ -544,13 +512,14 @@ CREATE TABLE public.site_settings (
 );
 
 
-ALTER TABLE public.site_settings OWNER TO mounirbennassar;
+ALTER TABLE public.site_settings OWNER TO postgres;
 
 --
 -- Data for Name: Bundle; Type: TABLE DATA; Schema: public; Owner: mounirbennassar
 --
 
 COPY public."Bundle" (id, title, slug, description, price, "salePrice", thumbnail, published, "createdAt", "updatedAt", file) FROM stdin;
+cm7gj5qt400051dd0bylradji	dsg	dgdfg-1-bundle-0	dsg	4	\N	/uploads/dgdfg-1-bundle-0-thumb-1740248726000-997511711.png	f	2025-02-22 18:25:26.009	2025-02-22 18:25:26.009	/uploads/dgdfg-1-bundle-0-file-1740248726001-317090945.docx
 \.
 
 
@@ -591,7 +560,8 @@ COPY public."EmailTemplate" (id, name, subject, content, "createdAt", "updatedAt
 --
 
 COPY public."Post" (id, title, slug, excerpt, content, thumbnail, published, "categoryId", "subcategoryId", tags, "seoTitle", "seoDescription", "seoKeywords", "createdAt", "updatedAt", "authorId") FROM stdin;
-cm7hkeo2h000110u36oads0v2	test	test	test	<p>test</p>	/uploads/1740311275796-ziuxt7b-Screenshot 2025-02-09 at 5.50.07 PM.png	t	cm74l1yhm00095f65pfe336r1	cm74l693c000g5f65in4kfdkr	{tfy}	gfhg	ghfhg	ghhg	2025-02-23 11:48:08.153	2025-02-23 11:48:08.153	cm79jurj20000bmtg2c56qjsn
+cm74p3pie0001h5com8n2xnk2	Unlock the Power of Sleep: Your Guide to a Restful Night	unlock-the-power-of-sleep-your-guide-to-a-restful-night	In today's fast-paced world, quality sleep often takes a backseat. But prioritizing sleep is not a luxury—it's a necessity for optimal physical and mental well-being. This article explores the profound importance of adequate sleep, delves into common sleep disruptors like insomnia, and provides practical strategies to unlock the power of a truly restful night.	<p>In today's fast-paced world, quality sleep often takes a backseat. But prioritizing sleep is not a luxury—it's a necessity for optimal physical and mental well-being. This article explores the profound importance of adequate sleep, delves into common sleep disruptors like insomnia, and provides practical strategies to unlock the power of a truly restful night.</p><p><br></p><p><strong>The Importance of Sleep: More Than Just Rest</strong></p><p>Sleep is a fundamental biological process crucial for a wide range of bodily functions. During sleep, our bodies and minds are hard at work:</p><ul><li><strong>Memory Consolidation:</strong> Sleep plays a vital role in processing and storing memories, strengthening learning and cognitive abilities.</li><li><strong>Cellular Repair:</strong> The body repairs and rejuvenates itself during sleep, bolstering the immune system and promoting overall health.</li><li><strong>Hormone Regulation:</strong> Sleep affects the production and regulation of various hormones, including those influencing appetite, growth, and stress response.</li></ul><p>Insufficient sleep can have significant consequences, increasing the risk of:</p><ul><li><strong>Chronic Diseases:</strong> Including obesity, diabetes, cardiovascular disease, and weakened immune function.</li><li><strong>Mental Health Issues:</strong> Such as mood disorders, anxiety, and decreased cognitive performance.</li><li><strong>Reduced Productivity:</strong> Impaired focus, concentration, and decision-making abilities.</li></ul><p><br></p><p><strong>Conquering Insomnia and Other Sleep Disruptors</strong></p><p>Insomnia, characterized by difficulty falling asleep or staying asleep, is a prevalent issue often triggered by stress, anxiety, or poor sleep hygiene. Other sleep disorders, like sleep apnea, further complicate the pursuit of restful sleep. Breaking the cycle of sleep deprivation requires a multi-faceted approach.</p><p><br></p><p><strong>Practical Strategies for Better Sleep:</strong></p><ul><li><strong>Establish a Consistent Sleep Schedule:</strong> Going to bed and waking up at the same time each day, even on weekends, helps regulate your body's natural sleep-wake cycle (circadian rhythm).</li><li><strong>Create a Relaxing Bedtime Routine:</strong> Wind down before bed with calming activities like reading, taking a warm bath, or listening to soothing music. Avoid screen time close to bedtime, as the blue light emitted from electronic devices can interfere with melatonin production, a hormone that regulates sleep.</li><li><strong>Optimize Your Sleep Environment:</strong> Ensure your bedroom is dark, quiet, and cool. Invest in a comfortable mattress and pillows. Consider using blackout curtains or a white noise machine to block out unwanted light and sound.</li><li><strong>Practice Relaxation Techniques:</strong> Deep breathing exercises, progressive muscle relaxation, and meditation can help calm the mind and body, promoting sleep onset. The 4-7-8 breathing method, developed by Dr. Andrew Weil, is a particularly effective technique for reducing stress and inducing relaxation.</li><li><strong>Mindful Eating and Drinking:</strong> Avoid caffeine and alcohol before bed. A light snack before sleep can sometimes be beneficial, but avoid heavy meals.</li><li><strong>Regular Exercise:</strong> Regular physical activity can improve sleep quality, but avoid intense workouts close to bedtime.</li></ul><p><br></p><p><strong>When to Seek Professional Help:</strong></p><p>If you consistently struggle with sleep despite implementing these strategies, it's essential to consult with a healthcare professional. They can help identify any underlying medical conditions or sleep disorders and recommend appropriate treatment options.</p><p><br></p><p><strong>Conclusion:</strong></p><p>Prioritizing sleep is an investment in your overall health and well-being. By adopting healthy sleep habits and optimizing your sleep environment, you can unlock the power of restorative sleep and experience the numerous benefits it offers for your mind, body, and daily life.</p>	/uploads/upload-1739533114478-311608704.jpg	t	cm74liob2000y5f65z1twa7jq	cm74lkp7p00125f65uq8qa8th	{sleep,"Guide to a Restful Night","the Power of Sleep"}	Unlock the Power of Sleep: Your Guide to a Restful Night	In today's fast-paced world, quality sleep often takes a backseat. But prioritizing sleep is not a luxury—it's a necessity for optimal physical and mental well-being. This article explores the profound importance of adequate sleep, delves into common sleep disruptors like insomnia, and provides practical strategies to unlock the power of a truly restful night.	sleep,guide to a restful night,the power of sleep	2025-02-14 11:38:34.597	2025-02-19 13:37:59.236	cm73nnd59000cfzn7ur5rvrvj
+cm74pshhb0003h5cov2c4lly7	Hacking Your Sleep: Science-Backed Strategies for a Better Night's Rest	hacking-your-sleep-science-backed-strategies-for-a-better-night-s-rest	Are you tired of tossing and turning, longing for a good night's sleep?  You're not alone.  Many people struggle with sleep issues, but the good news is that there are science-backed strategies you can implement to improve your sleep quality and duration. This article delves into evidence-based techniques to help you "hack" your sleep and wake up feeling refreshed and revitalized.	<p>Are you tired of tossing and turning, longing for a good night's sleep? You're not alone. Many people struggle with sleep issues, but the good news is that there are science-backed strategies you can implement to improve your sleep quality and duration. This article delves into evidence-based techniques to help you "hack" your sleep and wake up feeling refreshed and revitalized.</p><p><br></p><p><strong>Understanding the Science of Sleep:</strong></p><p>Sleep is a complex process involving various stages and cycles. Understanding the science behind sleep can empower you to make informed choices about your sleep habits.</p><ul><li><strong>Circadian Rhythm:</strong> This internal clock regulates your sleep-wake cycle, influenced by external cues like light and darkness.</li><li><strong>Sleep Stages:</strong> We cycle through different sleep stages throughout the night, including light sleep, deep sleep, and REM sleep (rapid eye movement), each playing a unique role in physical and cognitive restoration.</li></ul><p><br></p><p><strong>Evidence-Based Strategies for Better Sleep:</strong></p><ul><li><strong>Light Exposure:</strong> Exposure to natural sunlight during the day helps regulate your circadian rhythm. Conversely, minimize exposure to artificial light, especially blue light from electronic devices, in the evening.</li><li><strong>Temperature Regulation:</strong> A cool bedroom temperature (around 60-67 degrees Fahrenheit) is ideal for sleep. Your body's core temperature naturally drops during sleep, and a cooler environment facilitates this process.</li><li><strong>Noise Reduction:</strong> Minimize noise distractions in your bedroom. Consider using earplugs, a white noise machine, or a fan to create a more peaceful sleep environment.</li><li><strong>Dietary Considerations:</strong> A balanced diet rich in fruits, vegetables, and whole grains supports healthy sleep. Limit caffeine and alcohol intake, especially before bed. Certain foods, like cherries and fatty fish, contain natural melatonin, which may promote sleep.</li><li><strong>Supplementation:</strong> Melatonin supplements can be helpful for regulating circadian rhythms, particularly for jet lag or shift work. However, it's essential to consult with a healthcare professional before taking any supplements.</li><li><strong>Exercise and Movement:</strong> Regular physical activity can improve sleep quality and reduce sleep latency (the time it takes to fall asleep). However, avoid intense exercise close to bedtime.</li><li><strong>Stress Management:</strong> Chronic stress can significantly impact sleep. Practice stress-reducing techniques like meditation, mindfulness, or yoga.</li><li><strong>Technology and Sleep:</strong> Limit screen time before bed. The blue light emitted from electronic devices can suppress melatonin production and disrupt sleep. Create a "technology-free zone" in your bedroom.</li><li><strong>Guided Imagery and Meditation:</strong> These techniques can help calm the mind and promote relaxation, making it easier to fall asleep. There are numerous apps and audio guides available to assist with these practices.</li><li><strong>Progressive Muscle Relaxation (PMR):</strong> This technique involves tensing and relaxing different muscle groups in your body, helping to release tension and promote relaxation.</li></ul><p><br></p><p><strong>The Military Sleep Method:</strong> This technique, developed for military personnel, combines progressive muscle relaxation with visualization to quickly fall asleep in stressful environments. While its effectiveness is largely anecdotal, many find it helpful for reducing pre-sleep anxiety.</p><p><br></p><p><strong>Building a Personalized Sleep Plan:</strong></p><p>Experiment with different strategies to find what works best for you. Consistency is key. By prioritizing sleep and implementing evidence-based techniques, you can significantly improve your sleep quality and wake up feeling refreshed and ready to take on the day.</p><p><br></p><p>Sleep is not a luxury; it's a fundamental pillar of health and well-being. By understanding the science of sleep and implementing the strategies outlined in this article, you can "hack" your sleep and unlock the numerous benefits of a truly restful night. Remember to consult with a healthcare professional if you have persistent sleep problems.</p>	/uploads/upload-1739534270467-278922648.jpg	t	cm74liob2000y5f65z1twa7jq	cm74lkp7p00125f65uq8qa8th	{"Hacking Your Sleep","Strategies for a Better Night's Rest","Better Sleep"}	Hacking Your Sleep: Science-Backed Strategies for a Better Night's Rest	Are you tired of tossing and turning, longing for a good night's sleep?  You're not alone.  Many people struggle with sleep issues, but the good news is that there are science-backed strategies you can implement to improve your sleep quality and duration. This article delves into evidence-based techniques to help you "hack" your sleep and wake up feeling refreshed and revitalized.	sleep,strategies for Better Sleep,Better Sleep	2025-02-14 11:57:50.591	2025-02-22 14:42:47.324	cm73nnd59000cfzn7ur5rvrvj
 \.
 
 
@@ -640,6 +610,19 @@ cm74lnnmj001a5f65u7damf0c	Tech and Sleep	Tech and Sleep	/uploads/tech-and-sleep-
 --
 
 COPY public."Product" (id, title, slug, description, type, price, "salePrice", thumbnail, gallery, "digitalAssets", stock, published, featured, "categoryId", "createdAt", "updatedAt", "authorId") FROM stdin;
+cm7f5q0ye0004p697q5gq78rb	dfgdfg	dfgdfg	fdgdfg	DIGITAL	133.79	\N	/uploads/dfgdfg-thumb-1740165691447-714970911.png	{/uploads/dfgdfg-gallery-1740165691447-56547904.jpg}	{/uploads/dfgdfg-digital-1740165691446-546717261.pdf}	0	f	f	cm73ff1w50001zncnz36ywpy8	2025-02-21 19:21:31.479	2025-02-21 19:24:39.29	cm79jurj20000bmtg2c56qjsn
+cm7f67r9u0007p697x7kunncu	dfgdfgdfgdfg	dfgdfgdfgdfg	fdgdfgdfgdfg	DIGITAL	45	\N	/uploads/dfgdfgdfgdfg-thumb-1740166518737-475936170.jpg	{/uploads/dfgdfgdfgdfg-gallery-1740166518737-877871252.png}	{/uploads/dfgdfgdfgdfg-digital-1740166518736-330374872.pdf}	0	f	f	cm73ff1w50001zncnz36ywpy8	2025-02-21 19:35:18.738	2025-02-21 19:35:18.738	cm79jurj20000bmtg2c56qjsn
+cm7f6eoan0001ludmck2jro53	dfgdg	dfgdg	dfgdfg	DIGITAL	46	\N	/uploads/dfgdg-thumb-1740166841470-545857536.jpg	{/uploads/dfgdg-gallery-1740166841470-572178667.jpeg}	{/uploads/dfgdg-digital-1740166841469-574875902.pdf}	0	f	f	cm73ff1w50001zncnz36ywpy8	2025-02-21 19:40:41.471	2025-02-21 19:40:41.471	cm79jurj20000bmtg2c56qjsn
+cm7gidgz300019dw8yaz6wrxm	test	test	dgdfhgfh	DIGITAL	132	\N	/uploads/test-thumb-1740247406893-818826342.png	{/uploads/test-gallery-1740247406893-664375907.jpg,/uploads/test-gallery-1740247406894-88061980.jpg}	{/uploads/test-digital-1740247406892-438225833.pdf}	0	f	f	cm73ff1w50001zncnz36ywpy8	2025-02-22 18:03:26.895	2025-02-22 18:03:26.895	cm79jurj20000bmtg2c56qjsn
+cm7gihx5m00049dw8uh3j0dra	dfhfd	dfhfd	dfhhdfh	DIGITAL	122.78	\N	/uploads/dfhfd-thumb-1740247614488-949983761.png	{/uploads/dfhfd-gallery-1740247614489-615440732.jpg,/uploads/dfhfd-gallery-1740247614489-749186733.jpg}	{/uploads/dfhfd-digital-1740247614485-383685566.pdf}	0	f	f	cm73ff1w50001zncnz36ywpy8	2025-02-22 18:06:54.491	2025-02-22 18:06:54.491	cm79jurj20000bmtg2c56qjsn
+cm7gin3ze00079dw8z10kqsdz	vvv	vvv	vvvvv	DIGITAL	3	\N	/uploads/vvv-thumb-1740247856617-464992881.jpg	{}	{/uploads/vvv-digital-1740247856615-281369739.pdf}	0	f	f	cm73ff1w50001zncnz36ywpy8	2025-02-22 18:10:56.619	2025-02-22 18:10:56.619	cm79jurj20000bmtg2c56qjsn
+cm7gio75a000a9dw8ct15qgyn	vvv	vvv-1	vvvvv	DIGITAL	3	\N	/uploads/vvv-1-thumb-1740247907374-4502365.jpg	{}	{/uploads/vvv-1-digital-1740247907373-469705428.pdf}	0	f	f	cm73ff1w50001zncnz36ywpy8	2025-02-22 18:11:47.375	2025-02-22 18:11:47.375	cm79jurj20000bmtg2c56qjsn
+cm7gioxeu000d9dw8kd3ra4x4	vvv	vvv-2	vvvvv	DIGITAL	3	\N	/uploads/vvv-2-thumb-1740247941413-51978962.jpg	{}	{/uploads/vvv-2-digital-1740247941413-420519346.pdf}	0	f	f	cm73ff1w50001zncnz36ywpy8	2025-02-22 18:12:21.415	2025-02-22 18:12:21.415	cm79jurj20000bmtg2c56qjsn
+cm7gipuer000g9dw81pwo2ofz	gfhfgh	gfhfgh	fghfgh	DIGITAL	33	\N	/uploads/gfhfgh-thumb-1740247984177-321083503.png	{/uploads/gfhfgh-gallery-1740247984178-689367365.jpg}	{/uploads/gfhfgh-digital-1740247984177-455388286.pdf}	0	f	f	cm73ff1w50001zncnz36ywpy8	2025-02-22 18:13:04.18	2025-02-22 18:13:04.18	cm79jurj20000bmtg2c56qjsn
+cm7gir82t000j9dw8972boz9f	gfhfgh	gfhfgh-1	fghfgh	DIGITAL	33	\N	/uploads/gfhfgh-1-thumb-1740248048548-701501325.png	{/uploads/gfhfgh-1-gallery-1740248048548-569944196.jpg}	{/uploads/gfhfgh-1-digital-1740248048548-321180517.pdf}	0	f	f	cm73ff1w50001zncnz36ywpy8	2025-02-22 18:14:08.55	2025-02-22 18:14:08.55	cm79jurj20000bmtg2c56qjsn
+cm7girqjq000m9dw8pjpw5ljj	dfgdfg	dfgdfg-1	fgdfgd	DIGITAL	12	\N	/uploads/dfgdfg-1-thumb-1740248072486-883872995.png	{}	{/uploads/dfgdfg-1-digital-1740248072485-32435653.pdf}	0	f	f	cm73ff1w50001zncnz36ywpy8	2025-02-22 18:14:32.487	2025-02-22 18:14:32.487	cm79jurj20000bmtg2c56qjsn
+cm7gj2f9c00011dd0192bg4c4	dgdfg	dgdfg	dfgdfgdfg	DIGITAL	23	\N	/uploads/dgdfg-thumb-1740248571064-987117504.jpg	{/uploads/dgdfg-gallery-1740248571064-337496736.jpg}	{/uploads/dgdfg-digital-1740248571063-482731162.pdf}	0	f	f	cm73ff1w50001zncnz36ywpy8	2025-02-22 18:22:51.073	2025-02-22 18:22:51.073	cm79jurj20000bmtg2c56qjsn
+cm7gj5qsy00041dd0wuv1465b	dgdfg	dgdfg-1	dfgdfgdfg	DIGITAL	23	\N	/uploads/dgdfg-1-thumb-1740248725999-290814920.jpg	{/uploads/dgdfg-1-gallery-1740248725999-50973859.jpg}	{/uploads/dgdfg-1-digital-1740248725998-999509350.pdf}	0	t	f	cm73ff1w50001zncnz36ywpy8	2025-02-22 18:25:26.002	2025-02-22 18:37:43.832	cm79jurj20000bmtg2c56qjsn
 \.
 
 
@@ -665,15 +648,12 @@ COPY public."ProductSubCategory" (id, title, description, thumbnail, slug, "seoT
 --
 
 COPY public."SeoIndexingLog" (id, urls, type, results, "userId", "createdAt", "updatedAt") FROM stdin;
-cm7hkeouu000310u346tnasdy	{http://localhost:3000/posts/test}	URL_UPDATED	{"status": "submitted"}	cm79jurj20000bmtg2c56qjsn	2025-02-23 11:48:09.175	2025-02-23 11:48:09.175
-\.
-
-
---
--- Data for Name: SiteSettings; Type: TABLE DATA; Schema: public; Owner: mounirbennassar
---
-
-COPY public."SiteSettings" (id, "siteName", "siteTitle", "siteDescription", "siteKeywords", "ogTitle", "ogDescription", "ogImage", "twitterHandle", "twitterCardType", "organizationName", "organizationLogo", "contactEmail", "contactPhone", "contactAddress", "googleAnalyticsId", "googleSiteVerification", "robotsTxt", "sitemapXml", favicon, "createdAt", "updatedAt") FROM stdin;
+cm7brsue30001wd8gen2brvpl	{https://themidnightspa.com/posts/hacking-your-sleep-science-backed-strategies-for-a-better-nights-rest,https://themidnightspa.com/posts/unlock-the-power-of-sleep-your-guide-to-a-restful-night}	URL_UPDATED	[{"url": "https://themidnightspa.com/posts/hacking-your-sleep-science-backed-strategies-for-a-better-nights-rest", "value": {"data": {"urlNotificationMetadata": {"url": "https://themidnightspa.com/posts/hacking-your-sleep-science-backed-strategies-for-a-better-nights-rest"}}, "success": true}, "status": "fulfilled"}, {"url": "https://themidnightspa.com/posts/unlock-the-power-of-sleep-your-guide-to-a-restful-night", "value": {"data": {"urlNotificationMetadata": {"url": "https://themidnightspa.com/posts/unlock-the-power-of-sleep-your-guide-to-a-restful-night"}}, "success": true}, "status": "fulfilled"}]	cm79jurj20000bmtg2c56qjsn	2025-02-19 10:28:29.787	2025-02-19 10:28:29.787
+cm7bs119600018xpmscptx22d	{https://themidnightspa.com/categories/sleep-for-different-lifestyles,https://themidnightspa.com/categories/healing-sleep-energy,https://themidnightspa.com/categories/relaxation-stress-relief,https://themidnightspa.com/categories/sleep-tips-techniques}	URL_UPDATED	[{"url": "https://themidnightspa.com/categories/sleep-for-different-lifestyles", "value": {"data": {"urlNotificationMetadata": {"url": "https://themidnightspa.com/categories/sleep-for-different-lifestyles"}}, "success": true}, "status": "fulfilled"}, {"url": "https://themidnightspa.com/categories/healing-sleep-energy", "value": {"data": {"urlNotificationMetadata": {"url": "https://themidnightspa.com/categories/healing-sleep-energy"}}, "success": true}, "status": "fulfilled"}, {"url": "https://themidnightspa.com/categories/relaxation-stress-relief", "value": {"data": {"urlNotificationMetadata": {"url": "https://themidnightspa.com/categories/relaxation-stress-relief"}}, "success": true}, "status": "fulfilled"}, {"url": "https://themidnightspa.com/categories/sleep-tips-techniques", "value": {"data": {"urlNotificationMetadata": {"url": "https://themidnightspa.com/categories/sleep-tips-techniques"}}, "success": true}, "status": "fulfilled"}]	cm79jurj20000bmtg2c56qjsn	2025-02-19 10:34:51.93	2025-02-19 10:34:51.93
+cm7bs19sp00038xpmxa2u6f1v	{https://themidnightspa.com/videos/5-hour-sleep-music-with-delta-waves-for-deep-sleep-insomnia-relief-relaxing-music,https://themidnightspa.com/videos/sleep-instantly-delta-waves-fireplace-ambience-for-deep-relaxation-and-anxiety-relief,https://themidnightspa.com/videos/relaxing-waterfall-sounds-piano-music-4-hour-stress-relief-sleep-and-calm-nature-ambience,https://themidnightspa.com/videos/5-hours-of-relaxing-fireplace-ambience-cozy-crackling-fire-for-sleep-stress-relief-focus,https://themidnightspa.com/videos/snow-sleep-calm-music-for-insomnia-relief-and-deep-sleep,https://themidnightspa.com/videos/snowy-sleep-vibe-relaxing-music-to-lull-you-into-dream-land,https://themidnightspa.com/videos/relaxing-insomnia-rain-sounds-sleep-focus-and-relaxation-aid}	URL_UPDATED	[{"url": "https://themidnightspa.com/videos/5-hour-sleep-music-with-delta-waves-for-deep-sleep-insomnia-relief-relaxing-music", "value": {"data": {"urlNotificationMetadata": {"url": "https://themidnightspa.com/videos/5-hour-sleep-music-with-delta-waves-for-deep-sleep-insomnia-relief-relaxing-music"}}, "success": true}, "status": "fulfilled"}, {"url": "https://themidnightspa.com/videos/sleep-instantly-delta-waves-fireplace-ambience-for-deep-relaxation-and-anxiety-relief", "value": {"data": {"urlNotificationMetadata": {"url": "https://themidnightspa.com/videos/sleep-instantly-delta-waves-fireplace-ambience-for-deep-relaxation-and-anxiety-relief"}}, "success": true}, "status": "fulfilled"}, {"url": "https://themidnightspa.com/videos/relaxing-waterfall-sounds-piano-music-4-hour-stress-relief-sleep-and-calm-nature-ambience", "value": {"data": {"urlNotificationMetadata": {"url": "https://themidnightspa.com/videos/relaxing-waterfall-sounds-piano-music-4-hour-stress-relief-sleep-and-calm-nature-ambience"}}, "success": true}, "status": "fulfilled"}, {"url": "https://themidnightspa.com/videos/5-hours-of-relaxing-fireplace-ambience-cozy-crackling-fire-for-sleep-stress-relief-focus", "value": {"data": {"urlNotificationMetadata": {"url": "https://themidnightspa.com/videos/5-hours-of-relaxing-fireplace-ambience-cozy-crackling-fire-for-sleep-stress-relief-focus"}}, "success": true}, "status": "fulfilled"}, {"url": "https://themidnightspa.com/videos/snow-sleep-calm-music-for-insomnia-relief-and-deep-sleep", "value": {"data": {"urlNotificationMetadata": {"url": "https://themidnightspa.com/videos/snow-sleep-calm-music-for-insomnia-relief-and-deep-sleep"}}, "success": true}, "status": "fulfilled"}, {"url": "https://themidnightspa.com/videos/snowy-sleep-vibe-relaxing-music-to-lull-you-into-dream-land", "value": {"data": {"urlNotificationMetadata": {"url": "https://themidnightspa.com/videos/snowy-sleep-vibe-relaxing-music-to-lull-you-into-dream-land"}}, "success": true}, "status": "fulfilled"}, {"url": "https://themidnightspa.com/videos/relaxing-insomnia-rain-sounds-sleep-focus-and-relaxation-aid", "value": {"data": {"urlNotificationMetadata": {"url": "https://themidnightspa.com/videos/relaxing-insomnia-rain-sounds-sleep-focus-and-relaxation-aid"}}, "success": true}, "status": "fulfilled"}]	cm79jurj20000bmtg2c56qjsn	2025-02-19 10:35:03.001	2025-02-19 10:35:03.001
+cm7bygivv0001z4iioy3agim1	{https://themidnightspa.com/posts/unlock-the-power-of-sleep-your-guide-to-a-restful-night}	URL_UPDATED	{"status": "submitted"}	cm79jurj20000bmtg2c56qjsn	2025-02-19 13:34:52.315	2025-02-19 13:34:52.315
+cm7bykjoi0003z4iiu2dvz7gn	{https://themidnightspa.com/posts/unlock-the-power-of-sleep-your-guide-to-a-restful-night}	URL_UPDATED	{"status": "submitted"}	cm79jurj20000bmtg2c56qjsn	2025-02-19 13:37:59.971	2025-02-19 13:37:59.971
+cm7f1qjh00003yqej4so2r79r	{https://themidnightspa.com/posts/dsgsdf}	URL_UPDATED	{"status": "submitted"}	cm79jurj20000bmtg2c56qjsn	2025-02-21 17:29:57.012	2025-02-21 17:29:57.012
 \.
 
 
@@ -732,6 +712,7 @@ COPY public."_BundleIncludes" ("A", "B") FROM stdin;
 --
 
 COPY public."_BundleProducts" ("A", "B") FROM stdin;
+cm7gj5qt400051dd0bylradji	cm7gj5qsy00041dd0wuv1465b
 \.
 
 
@@ -740,40 +721,29 @@ COPY public."_BundleProducts" ("A", "B") FROM stdin;
 --
 
 COPY public._prisma_migrations (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count) FROM stdin;
-dfef6334-21c0-4d44-88bb-1e4c2050052d	9bdd11a47cd592138a02e45c1aafc4cf95bb6fea43e8afa767268d3095dcc062	2025-02-23 11:35:38.929259+00	20250212230419_init	\N	\N	2025-02-23 11:35:38.926644+00	1
-8272b00f-c0d9-4314-94bd-9254802ab0f8	9981c9a3593b60b83764e56bc7f3e66a1c1c339ad730bcea6d9db01f3596e885	2025-02-23 11:35:38.984229+00	20250222192456_add_file_to_bundle	\N	\N	2025-02-23 11:35:38.983489+00	1
-f49e08cf-204b-464a-99f2-3037af33c1a4	296e0e4567704f7f314905bfda8afa86f204bfffbcef0023ff2dbe0ed43f0ad7	2025-02-23 11:35:38.934858+00	20250212233321_add_categories	\N	\N	2025-02-23 11:35:38.929566+00	1
 8c573f22-9146-4c10-9daa-5ca65fcfd9cc	9bdd11a47cd592138a02e45c1aafc4cf95bb6fea43e8afa767268d3095dcc062	2025-02-13 12:33:55.237293+00	20250212230419_init	\N	\N	2025-02-13 12:33:55.230471+00	1
-3e467750-660e-4d77-9ebc-ea69bd5a55e4	59455742fdb083670f53b0003bbe3c47fe657da84f065f51e8db76b5801027f9	2025-02-23 11:35:38.940078+00	20250213001349_add_posts	\N	\N	2025-02-23 11:35:38.935175+00	1
 97656ce8-443f-4037-8042-1002a5eecb9a	296e0e4567704f7f314905bfda8afa86f204bfffbcef0023ff2dbe0ed43f0ad7	2025-02-13 12:33:55.247332+00	20250212233321_add_categories	\N	\N	2025-02-13 12:33:55.237662+00	1
-de466f36-6512-4848-90c5-525d6934fd30	e13d5f8d080e95e3b27bd08674ccd027b0e14746660ed26b7e5ba5475d37d9d1	2025-02-23 11:35:38.94987+00	20250213123355_add_products_and_bundles	\N	\N	2025-02-23 11:35:38.940431+00	1
 a46d0207-85b9-441c-8f49-f4c9914b4705	59455742fdb083670f53b0003bbe3c47fe657da84f065f51e8db76b5801027f9	2025-02-13 12:33:55.254599+00	20250213001349_add_posts	\N	\N	2025-02-13 12:33:55.24777+00	1
-de9ecd98-fd77-4f46-8c7c-b37213b6dae1	900d863da4bd79a8bb35f1b63e43038e8f0c7d4f8858f2b82dcd48f8d059296d	2025-02-23 11:35:38.951083+00	20250213130624_add_type_to_category	\N	\N	2025-02-23 11:35:38.950184+00	1
 3363f2df-2797-49bb-ae0d-c4ecd1e6499a	e13d5f8d080e95e3b27bd08674ccd027b0e14746660ed26b7e5ba5475d37d9d1	2025-02-13 12:33:55.807192+00	20250213123355_add_products_and_bundles	\N	\N	2025-02-13 12:33:55.793696+00	1
-4baded01-6e84-446b-a569-73d0d001f0f9	ddb2d862e225fd7161e9957b459ce0bfbd2f0614a3654266e08eadc25472d0bb	2025-02-23 11:35:38.962782+00	20250213131935_separate_post_and_product_categories	\N	\N	2025-02-23 11:35:38.951416+00	1
 31ccde96-ff5d-4248-a844-35810a997628	900d863da4bd79a8bb35f1b63e43038e8f0c7d4f8858f2b82dcd48f8d059296d	2025-02-13 13:06:24.688111+00	20250213130624_add_type_to_category	\N	\N	2025-02-13 13:06:24.686136+00	1
-dc59f1cb-0e7d-4d7b-a2c3-0b7230a3b2d4	b1e8a9837eadd0c8110f8c1326fcdf3c6319679b92be4d79ba28a88955bdd4e1	2025-02-23 11:35:38.964953+00	20250214190505_add_site_settings	\N	\N	2025-02-23 11:35:38.963116+00	1
 dbe65c8b-189d-4cc1-b391-dc48264c58a6	ddb2d862e225fd7161e9957b459ce0bfbd2f0614a3654266e08eadc25472d0bb	2025-02-13 13:19:35.312125+00	20250213131935_separate_post_and_product_categories	\N	\N	2025-02-13 13:19:35.299883+00	1
-4f5ae52d-71cf-403e-bf7b-86872418b378	0f2620e517b3e531b5abec2b2a70a4ea32aa850ff6506a52ab6793673398ebde	2025-02-23 11:35:38.966338+00	20250214192200_add_site_settings	\N	\N	2025-02-23 11:35:38.965256+00	1
 440c5eed-4428-4f9e-8441-9f44cd059315	b1e8a9837eadd0c8110f8c1326fcdf3c6319679b92be4d79ba28a88955bdd4e1	2025-02-14 19:05:05.353685+00	20250214190505_add_site_settings	\N	\N	2025-02-14 19:05:05.34528+00	1
-b69ac794-e1a6-4bef-947f-26e71499a541	c8d2614bf7214daac3c4869443e0f94779f0f0853749549c47d795f296a1f083	2025-02-23 11:35:38.967359+00	20250214193717_add_site_settings	\N	\N	2025-02-23 11:35:38.966606+00	1
 4af0b4fc-f13e-4120-8128-6ac8ecb070c1	0f2620e517b3e531b5abec2b2a70a4ea32aa850ff6506a52ab6793673398ebde	2025-02-14 19:22:00.407404+00	20250214192200_add_site_settings	\N	\N	2025-02-14 19:22:00.404788+00	1
-b5ff2eff-b074-452d-ac63-2bdbebb67fe9	92d6d8c8629b881d2f43d939c597b77590ac37a8419127589bd5fc57e3caa49c	2025-02-23 11:35:38.975895+00	20250214194629_add_newsletter_system	\N	\N	2025-02-23 11:35:38.967663+00	1
 e66714a5-dce7-4514-94a8-73603f0a52dc	c8d2614bf7214daac3c4869443e0f94779f0f0853749549c47d795f296a1f083	2025-02-14 19:37:17.357048+00	20250214193717_add_site_settings	\N	\N	2025-02-14 19:37:17.354939+00	1
-4d05d8bb-5217-4698-8ffc-e42cc401a82f	034a8bb8be0b279b197d475229917a43bae4a087a772f45ed578f1baffd03d8a	2025-02-23 11:35:38.977565+00	20250217210754_add_user_roles	\N	\N	2025-02-23 11:35:38.976186+00	1
 ac8a4adf-b5f0-4497-b11d-e51b812680cf	92d6d8c8629b881d2f43d939c597b77590ac37a8419127589bd5fc57e3caa49c	2025-02-14 19:46:29.928089+00	20250214194629_add_newsletter_system	\N	\N	2025-02-14 19:46:29.90876+00	1
-3a94f746-b090-477f-8cba-52d681c46bdb	70c27a43bc09006748f388d35958e56cde67a56f006bc4a474b87d0d19367315	2025-02-23 11:35:38.979724+00	20250218165854_add_seo_indexing_log	\N	\N	2025-02-23 11:35:38.977853+00	1
 74352863-8d1d-496f-b9ea-621e73bd3032	034a8bb8be0b279b197d475229917a43bae4a087a772f45ed578f1baffd03d8a	2025-02-17 21:07:54.57208+00	20250217210754_add_user_roles	\N	\N	2025-02-17 21:07:54.567158+00	1
-efc3ed14-77ab-4e84-b593-4cbc64cebeed	46e6320daec37a6a1cf9c72e2d625b8a161c7d8b13cdb28ac1f4f2bd8d3b4372	2025-02-23 11:35:38.983212+00	20250221154952_sync_bundle_file_field	\N	\N	2025-02-23 11:35:38.979954+00	1
+64a1b14d-0f02-4af3-80fe-ecab03ae2e5e	70c27a43bc09006748f388d35958e56cde67a56f006bc4a474b87d0d19367315	2025-02-21 17:04:00.326269+00	20250218165854_add_seo_indexing_log	A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve\n\nMigration name: 20250218165854_add_seo_indexing_log\n\nDatabase error code: 42P07\n\nDatabase error:\nERROR: relation "SeoIndexingLog" already exists\n\nDbError { severity: "ERROR", parsed_severity: Some(Error), code: SqlState(E42P07), message: "relation \\"SeoIndexingLog\\" already exists", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("heap.c"), line: Some(1149), routine: Some("heap_create_with_catalog") }\n\n   0: sql_schema_connector::apply_migration::apply_script\n           with migration_name="20250218165854_add_seo_indexing_log"\n             at schema-engine/connectors/sql-schema-connector/src/apply_migration.rs:106\n   1: schema_core::commands::apply_migrations::Applying migration\n           with migration_name="20250218165854_add_seo_indexing_log"\n             at schema-engine/core/src/commands/apply_migrations.rs:91\n   2: schema_core::state::ApplyMigrations\n             at schema-engine/core/src/state.rs:226	\N	2025-02-21 17:03:34.423211+00	0
+d7f1f23c-2c15-4e68-8f3c-cc5e8ea492b4	13165727460785813051595786689805735594	2025-02-21 17:04:00.326269+00	20250218165854_add_seo_indexing_log	\N	\N	2025-02-21 17:03:43.997524+00	1
+fd16001a-ef36-4200-b0d6-4dd7fce192c2	46e6320daec37a6a1cf9c72e2d625b8a161c7d8b13cdb28ac1f4f2bd8d3b4372	\N	20250221154952_sync_bundle_file_field	A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve\n\nMigration name: 20250221154952_sync_bundle_file_field\n\nDatabase error code: 42P07\n\nDatabase error:\nERROR: relation "StaticPageSeo" already exists\n\nDbError { severity: "ERROR", parsed_severity: Some(Error), code: SqlState(E42P07), message: "relation \\"StaticPageSeo\\" already exists", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("heap.c"), line: Some(1149), routine: Some("heap_create_with_catalog") }\n\n   0: sql_schema_connector::apply_migration::apply_script\n           with migration_name="20250221154952_sync_bundle_file_field"\n             at schema-engine/connectors/sql-schema-connector/src/apply_migration.rs:106\n   1: schema_core::commands::apply_migrations::Applying migration\n           with migration_name="20250221154952_sync_bundle_file_field"\n             at schema-engine/core/src/commands/apply_migrations.rs:91\n   2: schema_core::state::ApplyMigrations\n             at schema-engine/core/src/state.rs:226	\N	2025-02-21 17:04:07.615263+00	0
+e8f1f23c-2c15-4e68-8f3c-cc5e8ea492b5	13165727460785813051595786689805735595	2025-02-21 17:04:22.751033+00	20250221154952_sync_bundle_file_field	\N	\N	2025-02-21 17:04:22.751033+00	1
 \.
 
 
 --
--- Data for Name: site_settings; Type: TABLE DATA; Schema: public; Owner: mounirbennassar
+-- Data for Name: site_settings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.site_settings (id, "siteName", "siteTitle", "siteDescription", "siteKeywords", favicon, "ogImage", "twitterHandle", "organizationName", "organizationLogo", "contactPhone", "contactEmail", "contactAddress", "createdAt", "updatedAt") FROM stdin;
-default	Midnight Spa	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	2025-02-23 11:35:49.805	2025-02-23 11:35:49.805
 \.
 
 
@@ -874,14 +844,6 @@ ALTER TABLE ONLY public."SeoIndexingLog"
 
 
 --
--- Name: SiteSettings SiteSettings_pkey; Type: CONSTRAINT; Schema: public; Owner: mounirbennassar
---
-
-ALTER TABLE ONLY public."SiteSettings"
-    ADD CONSTRAINT "SiteSettings_pkey" PRIMARY KEY (id);
-
-
---
 -- Name: StaticPageSeo StaticPageSeo_pkey; Type: CONSTRAINT; Schema: public; Owner: mounirbennassar
 --
 
@@ -922,7 +884,7 @@ ALTER TABLE ONLY public._prisma_migrations
 
 
 --
--- Name: site_settings site_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: mounirbennassar
+-- Name: site_settings site_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.site_settings

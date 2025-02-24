@@ -148,14 +148,36 @@ export default function PostForm({ postId, initialData }: PostFormProps) {
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setThumbnailPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Create FormData and append the file
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Upload the file
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to upload image');
+        }
+
+        const data = await response.json();
+        
+        if (data.success && data.filename) {
+          // Update the thumbnail preview with the new URL
+          setThumbnailPreview(data.filename);
+        } else {
+          throw new Error('Invalid response from server');
+        }
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        setError(error instanceof Error ? error.message : 'Failed to upload image');
+      }
     }
   };
 
