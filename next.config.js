@@ -37,10 +37,6 @@ const nextConfig = {
     ignoreBuildErrors: true
   },
   experimental: {
-    serverActions: {
-      allowedOrigins: ['localhost:3000', '5.78.70.244', 'themidnightspa.com'],
-      bodySizeLimit: '2mb'
-    },
     optimizePackageImports: ['@heroicons/react'],
     forceSwcTransforms: true
   },

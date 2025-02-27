@@ -8,9 +8,10 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const resolvedParams = await params;
     const video = await prisma.video.findUnique({
       where: {
-        id: params.id,
+        id: resolvedParams.id,
       },
     });
 
@@ -36,6 +37,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const resolvedParams = await params;
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -70,7 +72,7 @@ export async function PATCH(
 
     const video = await prisma.video.update({
       where: {
-        id: params.id,
+        id: resolvedParams.id,
       },
       data: {
         title,
@@ -99,6 +101,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const resolvedParams = await params;
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -106,7 +109,7 @@ export async function DELETE(
 
     await prisma.video.delete({
       where: {
-        id: params.id,
+        id: resolvedParams.id,
       },
     });
 

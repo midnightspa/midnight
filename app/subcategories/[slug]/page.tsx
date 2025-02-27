@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import prisma from '@/lib/prisma';
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const resolvedParams = await params;
   const subcategory = await prisma.postSubCategory.findUnique({
     where: {
-      slug: params.slug,
+      slug: resolvedParams.slug,
     },
     select: {
       title: true,

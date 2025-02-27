@@ -3,11 +3,12 @@ import prisma from '@/lib/prisma';
 import SubCategoryClient from './SubCategoryClient';
 
 export async function generateMetadata({ params }: { params: { slug: string, subcategorySlug: string } }): Promise<Metadata> {
+  const resolvedParams = await params;
   const subcategory = await prisma.postSubCategory.findFirst({
     where: {
-      slug: params.subcategorySlug,
+      slug: resolvedParams.subcategorySlug,
       category: {
-        slug: params.slug
+        slug: resolvedParams.slug
       }
     },
     include: {

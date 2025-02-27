@@ -8,16 +8,17 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const resolvedParams = await params;
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const data = await request.json();
-    console.log('Updating product:', params.id, 'with data:', data);
+    console.log('Updating product:', resolvedParams.id, 'with data:', data);
 
     const product = await prisma.product.update({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       data: {
         published: data.published,
         updatedAt: new Date(),
@@ -49,13 +50,14 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const resolvedParams = await params;
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     await prisma.product.delete({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
     });
 
     return NextResponse.json({ success: true });

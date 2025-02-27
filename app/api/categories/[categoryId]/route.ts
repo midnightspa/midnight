@@ -11,6 +11,9 @@ export async function DELETE(
   { params }: { params: { categoryId: string } }
 ) {
   try {
+    const resolvedParams = await params;
+    const categoryId = resolvedParams.categoryId;
+    
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -18,7 +21,7 @@ export async function DELETE(
 
     // First, get the category to check if it has a thumbnail
     const category = await prisma.postCategory.findUnique({
-      where: { id: params.categoryId },
+      where: { id: categoryId },
       include: { subcategories: true },
     });
 
@@ -47,7 +50,7 @@ export async function DELETE(
 
     // Delete the category
     await prisma.postCategory.delete({
-      where: { id: params.categoryId },
+      where: { id: categoryId },
     });
 
     return new NextResponse(null, { status: 204 });
@@ -65,6 +68,9 @@ export async function PATCH(
   { params }: { params: { categoryId: string } }
 ) {
   try {
+    const resolvedParams = await params;
+    const categoryId = resolvedParams.categoryId;
+    
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -119,7 +125,7 @@ export async function PATCH(
 
     const category = await prisma.postCategory.update({
       where: {
-        id: params.categoryId,
+        id: categoryId,
       },
       data: {
         title,
@@ -147,7 +153,8 @@ export async function GET(
   { params }: { params: { categoryId: string } }
 ) {
   try {
-    const slug = params.categoryId;
+    const resolvedParams = await params;
+    const slug = resolvedParams.categoryId;
 
     const category = await prisma.postCategory.findFirst({
       where: {

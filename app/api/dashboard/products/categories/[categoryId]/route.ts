@@ -11,6 +11,7 @@ export async function GET(
   { params }: { params: { categoryId: string } }
 ) {
   try {
+    const resolvedParams = await params;
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -18,7 +19,7 @@ export async function GET(
 
     const category = await prisma.productCategory.findUnique({
       where: {
-        id: params.categoryId,
+        id: resolvedParams.categoryId,
       },
     });
 
@@ -44,6 +45,7 @@ export async function PATCH(
   { params }: { params: { categoryId: string } }
 ) {
   try {
+    const resolvedParams = await params;
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -108,7 +110,7 @@ export async function PATCH(
 
     const category = await prisma.productCategory.update({
       where: {
-        id: params.categoryId,
+        id: resolvedParams.categoryId,
       },
       data: categoryData,
     });
@@ -128,6 +130,7 @@ export async function DELETE(
   { params }: { params: { categoryId: string } }
 ) {
   try {
+    const resolvedParams = await params;
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -135,7 +138,7 @@ export async function DELETE(
 
     await prisma.productCategory.delete({
       where: {
-        id: params.categoryId,
+        id: resolvedParams.categoryId,
       },
     });
 

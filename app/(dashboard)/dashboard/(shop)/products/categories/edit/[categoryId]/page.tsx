@@ -16,8 +16,7 @@ interface Category {
   type: 'DIGITAL' | 'PHYSICAL';
 }
 
-export default function EditProductCategoryPage() {
-  const params = useParams();
+export default function EditProductCategoryPage({ params }: { params: { categoryId: string } }) {
   const [category, setCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +24,9 @@ export default function EditProductCategoryPage() {
   useEffect(() => {
     const fetchCategory = async () => {
       try {
-        const response = await fetch(`/api/(dashboard)/products/categories/${params.categoryId}`);
+        setLoading(true);
+        const resolvedParams = await params;
+        const response = await fetch(`/api/dashboard/products/categories/${resolvedParams.categoryId}`);
         if (!response.ok) throw new Error('Failed to fetch category');
         const data = await response.json();
         setCategory(data);
@@ -37,7 +38,7 @@ export default function EditProductCategoryPage() {
     };
 
     fetchCategory();
-  }, [params.categoryId]);
+  }, [params]);
 
   if (loading) {
     return (

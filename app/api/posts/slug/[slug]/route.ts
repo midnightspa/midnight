@@ -6,7 +6,8 @@ export async function GET(
   { params }: { params: { slug: string } }
 ) {
   try {
-    const slug = params.slug;
+    const resolvedParams = await params;
+    const slug = resolvedParams.slug;
     console.log('Fetching post with slug:', slug);
     const post = await prisma.post.findUnique({
       where: {

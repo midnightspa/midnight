@@ -6,16 +6,27 @@ const globalForPrisma = globalThis as unknown as {
 
 const prismaClientSingleton = () => {
   return new PrismaClient({
-    log: [
-      {
-        emit: 'event',
-        level: 'error',
-      },
-      {
-        emit: 'event',
-        level: 'warn',
-      },
-    ],
+    log: process.env.NODE_ENV === 'development' 
+      ? [
+          {
+            emit: 'event',
+            level: 'query',
+          },
+          {
+            emit: 'event',
+            level: 'error',
+          },
+          {
+            emit: 'event',
+            level: 'warn',
+          },
+        ]
+      : [
+          {
+            emit: 'event',
+            level: 'error',
+          },
+        ],
     errorFormat: 'minimal',
   });
 };

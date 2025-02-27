@@ -11,9 +11,10 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const resolvedParams = await params;
     const post = await prisma.post.findUnique({
       where: {
-        id: params.id,
+        id: resolvedParams.id,
       },
       select: {
         id: true,
@@ -63,6 +64,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const resolvedParams = await params;
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -70,7 +72,7 @@ export async function PATCH(
 
     // Get the current post
     const currentPost = await prisma.post.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       select: { published: true, slug: true }
     });
 
@@ -99,7 +101,7 @@ export async function PATCH(
 
     // Update the post
     const updatedPost = await prisma.post.update({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       data: {
         ...data,
         published: typeof data.published === 'boolean' ? data.published : currentPost.published
@@ -168,6 +170,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const resolvedParams = await params;
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -175,7 +178,7 @@ export async function DELETE(
 
     await prisma.post.delete({
       where: {
-        id: params.id,
+        id: resolvedParams.id,
       },
     });
 

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Poppins } from 'next/font/google';
 
 const poppins = Poppins({
@@ -63,6 +63,7 @@ interface SubCategory {
 
 export default function SubCategoryClient() {
   const params = useParams();
+  const router = useRouter();
   const [category, setCategory] = useState<Category | null>(null);
   const [subcategory, setSubcategory] = useState<SubCategory | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -77,13 +78,9 @@ export default function SubCategoryClient() {
         setError(null);
         setLoading(true);
 
-        if (!params || typeof params !== 'object') {
-          setError('Invalid URL parameters');
-          return;
-        }
-
-        const categorySlug = params.slug;
-        const subcategorySlug = params.subcategorySlug;
+        const resolvedParams = await params;
+        const categorySlug = resolvedParams.slug;
+        const subcategorySlug = resolvedParams.subcategorySlug;
 
         if (!categorySlug || !subcategorySlug || 
             typeof categorySlug !== 'string' || 

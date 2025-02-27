@@ -43,9 +43,10 @@ interface RelatedPost {
 
 // Add metadata generation
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const resolvedParams = await params;
   const post = await prisma.post.findUnique({
     where: {
-      slug: params.slug,
+      slug: resolvedParams.slug,
     },
     include: {
       author: {
@@ -117,9 +118,10 @@ const toBase64 = (str: string) =>
     : window.btoa(str);
 
 export default async function PostPage({ params }: { params: { slug: string } }) {
+  const resolvedParams = await params;
   const post = await prisma.post.findUnique({
     where: {
-      slug: params.slug,
+      slug: resolvedParams.slug,
     },
     select: {
       id: true,

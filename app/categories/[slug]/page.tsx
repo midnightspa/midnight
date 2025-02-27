@@ -12,9 +12,10 @@ const poppins = Poppins({
 });
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const category = await prisma.postCategory.findUnique({
+  const resolvedParams = await params;
+  const category = await prisma.postCategory.findFirst({
     where: {
-      slug: params.slug,
+      slug: resolvedParams.slug,
     }
   });
 

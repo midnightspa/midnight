@@ -49,9 +49,10 @@ async function getLatestVideos() {
 
 // Add metadata generation
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const resolvedParams = await params;
   const video = await prisma.video.findUnique({
     where: {
-      slug: params.slug,
+      slug: resolvedParams.slug,
     },
     select: {
       title: true,
@@ -97,8 +98,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function VideoPage({ params }: { params: { slug: string } }) {
+  const resolvedParams = await params;
   const [video, latestVideos] = await Promise.all([
-    getVideo(params.slug),
+    getVideo(resolvedParams.slug),
     getLatestVideos(),
   ]);
 

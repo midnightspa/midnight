@@ -6,9 +6,10 @@ export async function GET(
   { params }: { params: { slug: string } }
 ) {
   try {
+    const resolvedParams = await params;
     const video = await prisma.video.findFirst({
       where: {
-        slug: params.slug,
+        slug: resolvedParams.slug,
         published: true,
       },
       select: {

@@ -16,6 +16,7 @@ import {
 import useMeasure from 'react-use-measure';
 import { FiMenu, FiArrowRight, FiX, FiChevronDown, FiSearch } from 'react-icons/fi';
 import SearchDialog from './SearchDialog';
+import ClientOnly from '@/components/ClientOnly';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -48,11 +49,20 @@ export default function Header() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { scrollY } = useScroll();
+  
+  // Wrap framer-motion hooks in ClientOnly
+  const [scrollYValue, setScrollYValue] = useState(0);
 
-  useMotionValueEvent(scrollY, "change", (latest: number) => {
-    setScrolled(latest > 250 ? true : false);
-  });
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      setScrollYValue(currentScrollY);
+      setScrolled(currentScrollY > 250);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     fetchCategories();
@@ -129,53 +139,57 @@ export default function Header() {
                 className="text-neutral-900 hover:text-neutral-600 font-medium transition-colors flex items-center gap-1"
               >
                 Blog
-                <motion.div
-                  animate={{ rotate: isBlogMenuOpen ? "180deg" : "0deg" }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                >
-                  <FiChevronDown />
-                </motion.div>
+                <ClientOnly>
+                  <motion.div
+                    animate={{ rotate: isBlogMenuOpen ? "180deg" : "0deg" }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                  >
+                    <FiChevronDown />
+                  </motion.div>
+                </ClientOnly>
               </button>
 
-              <AnimatePresence>
-                {isBlogMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 15 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 w-[800px] bg-white shadow-xl rounded-xl mt-2"
-                  >
-                    <div className="p-6">
-                      <div className="flex gap-8">
-                        {categories.map((category) => (
-                          <div key={category.id} className="flex-1">
-                            <Link
-                              href={`/categories/${category.slug}`}
-                              className="inline-flex items-center gap-2 font-semibold text-neutral-900 hover:text-neutral-600 mb-4"
-                            >
-                              <span>{category.title}</span>
-                              <FiArrowRight className="w-4 h-4" />
-                            </Link>
-                            <ul className="space-y-2 border-l border-neutral-200 pl-4">
-                              {category.subcategories.map((subcategory) => (
-                                <li key={subcategory.id}>
-                                  <Link
-                                    href={`/categories/${category.slug}/${subcategory.slug}`}
-                                    className="text-sm text-neutral-600 hover:text-neutral-900 block transition-colors"
-                                  >
-                                    {subcategory.title}
-                                  </Link>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
+              <ClientOnly>
+                <AnimatePresence>
+                  {isBlogMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 15 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      className="absolute top-full left-1/2 -translate-x-1/2 w-[800px] bg-white shadow-xl rounded-xl mt-2"
+                    >
+                      <div className="p-6">
+                        <div className="flex gap-8">
+                          {categories.map((category) => (
+                            <div key={category.id} className="flex-1">
+                              <Link
+                                href={`/categories/${category.slug}`}
+                                className="inline-flex items-center gap-2 font-semibold text-neutral-900 hover:text-neutral-600 mb-4"
+                              >
+                                <span>{category.title}</span>
+                                <FiArrowRight className="w-4 h-4" />
+                              </Link>
+                              <ul className="space-y-2 border-l border-neutral-200 pl-4">
+                                {category.subcategories.map((subcategory) => (
+                                  <li key={subcategory.id}>
+                                    <Link
+                                      href={`/categories/${category.slug}/${subcategory.slug}`}
+                                      className="text-sm text-neutral-600 hover:text-neutral-900 block transition-colors"
+                                    >
+                                      {subcategory.title}
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </ClientOnly>
             </div>
 
             <Link
@@ -260,12 +274,14 @@ export default function Header() {
                       <div>
                         <Disclosure.Button className="flex w-full items-center justify-between text-2xl font-medium text-neutral-900 hover:text-neutral-600">
                           <span>Blog</span>
-                          <motion.div
-                            animate={{ rotate: open ? "180deg" : "0deg" }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <FiChevronDown />
-                          </motion.div>
+                          <ClientOnly>
+                            <motion.div
+                              animate={{ rotate: open ? "180deg" : "0deg" }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <FiChevronDown />
+                            </motion.div>
+                          </ClientOnly>
                         </Disclosure.Button>
 
                         <Disclosure.Panel className="mt-4 space-y-4">

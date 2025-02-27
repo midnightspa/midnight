@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Poppins } from 'next/font/google';
 import { useCart } from '@/app/contexts/CartContext';
+import { useParams } from 'next/navigation';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -47,17 +48,21 @@ const toBase64 = (str: string) =>
     ? Buffer.from(str).toString('base64')
     : window.btoa(str);
 
-export default function ProductPage({ params }: { params: { slug: string } }) {
+export default function ProductPage() {
+  const params = useParams();
   const [product, setProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await fetch(`/api/shop/products/${params.slug}`);
+        setLoading(true);
+        const resolvedParams = await params;
+        const response = await fetch(`/api/shop/products/${resolvedParams.slug}`);
         if (!response.ok) throw new Error('Product not found');
         const data = await response.json();
         setProduct(data);
@@ -70,7 +75,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     };
 
     fetchProduct();
-  }, [params.slug]);
+  }, [params]);
 
   const handleAddToCart = () => {
     if (!product) return;

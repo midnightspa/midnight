@@ -1,36 +1,93 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Midnight Spa
 
-## Getting Started
+A luxury spa website built with Next.js 15.2, Prisma, and PostgreSQL.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js 18.17 or later
+- PostgreSQL 14 or later
+- npm or yarn
+
+## Setup
+
+1. Clone the repository:
+
+```bash
+git clone <repository-url>
+cd midnight
+```
+
+2. Install dependencies and set up the database:
+
+```bash
+./scripts/setup.sh
+```
+
+This script will:
+- Install all dependencies
+- Generate the Prisma client
+- Create the database if it doesn't exist
+- Push the schema to the database
+- Seed the database with initial data
+
+## Development
+
+To start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The application will be available at [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Database Management
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Generate Prisma Client**: `npm run prisma:generate`
+- **Push Schema Changes**: `npm run db:push`
+- **Open Prisma Studio**: `npm run db:studio`
+- **Seed Database**: `npm run db:seed`
+- **Create Admin User**: `npm run create-admin`
 
-## Learn More
+## Build for Production
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Start Production Server
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm start
+```
 
-## Deploy on Vercel
+## Technologies Used
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Next.js 15.2**: React framework with App Router
+- **Prisma**: ORM for database access
+- **PostgreSQL**: Database
+- **TailwindCSS**: Utility-first CSS framework
+- **NextAuth.js**: Authentication
+- **TypeScript**: Type-safe JavaScript
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project Structure
+
+- `app/`: Next.js App Router pages and layouts
+- `components/`: Reusable React components
+- `lib/`: Utility functions and shared code
+- `prisma/`: Database schema and migrations
+- `public/`: Static assets
+- `scripts/`: Utility scripts for development and deployment
+- `types/`: TypeScript type definitions
+
+## Environment Variables
+
+The following environment variables are required:
+
+- `DATABASE_URL`: PostgreSQL connection string
+- `NEXTAUTH_URL`: URL of the application
+- `NEXTAUTH_SECRET`: Secret for NextAuth.js
+- `NEXT_PUBLIC_BASE_URL`: Base URL for SEO and API endpoints
+
+## License
+
+[MIT](LICENSE)
