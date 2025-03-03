@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Poppins } from 'next/font/google';
-import { FiCheck, FiChevronRight } from 'react-icons/fi';
+import { FiCheck } from 'react-icons/fi';
 import { useCart } from '@/app/contexts/CartContext';
 
 const poppins = Poppins({
@@ -12,13 +12,14 @@ const poppins = Poppins({
   weight: ['400', '500', '600', '700'],
 });
 
-export default function SuccessPage() {
+// Component that uses useSearchParams wrapped in Suspense
+function SuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { clearCart } = useCart();
   const paymentIntent = searchParams.get('payment_intent');
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!paymentIntent) {
       router.push('/shop');
       return;
@@ -76,5 +77,18 @@ export default function SuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Main component with Suspense boundary
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-neutral-900"></div>
+      </div>
+    }>
+      <SuccessContent />
+    </Suspense>
   );
 } 
