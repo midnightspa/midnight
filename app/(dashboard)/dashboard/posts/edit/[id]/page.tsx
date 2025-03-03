@@ -74,8 +74,7 @@ async function getPost(id: string) {
 }
 
 export default async function EditPostPage({ params }: { params: { id: string } }) {
-  const resolvedParams = await params;
-  const post = await getPost(resolvedParams.id);
+  const post = await getPost(params.id);
 
   if (!post) {
     notFound();
@@ -93,7 +92,7 @@ export default async function EditPostPage({ params }: { params: { id: string } 
       <div className="bg-white rounded-lg shadow">
         <div className="p-6">
           <PostForm 
-            postId={resolvedParams.id}
+            postId={params.id}
             initialData={{
               title: post.title,
               slug: post.slug,

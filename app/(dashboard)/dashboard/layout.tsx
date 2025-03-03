@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../api/auth/[...nextauth]/auth.config';
+import { authOptions } from '../../api/auth/[...nextauth]/auth.config';
 import Link from 'next/link';
 import Image from 'next/image';
 import { signOut } from 'next-auth/react';

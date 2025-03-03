@@ -12,15 +12,14 @@ interface PageProps {
   searchParams: { [key: string]: string | string[] | undefined };
 }
 
-export default async function EditCategoryPage({ params }: { params: { categoryId: string } }) {
-  const resolvedParams = await params;
-  const categoryId = resolvedParams.categoryId;
-
+export default async function EditCategoryPage({ params, searchParams }: PageProps) {
   const session = await getServerSession(authOptions);
   
   if (!session) {
     redirect('/auth/signin');
   }
+
+  const categoryId = params.categoryId;
 
   // Try to find as category first
   let item = await prisma.postCategory.findUnique({

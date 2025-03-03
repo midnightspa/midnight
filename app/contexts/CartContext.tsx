@@ -117,6 +117,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [state]);
 
   const addItem = (item: CartItem) => {
+    console.log('Adding item to cart:', item);
+    console.log('Item type:', item.type);
     dispatch({ type: 'ADD_ITEM', payload: item });
   };
 

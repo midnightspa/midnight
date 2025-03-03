@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth.config';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
-import DashboardContent from './components/DashboardContent';
+import DashboardContent from '../dashboard/components/DashboardContent';
 
 export const dynamic = 'force-dynamic';
 

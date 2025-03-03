@@ -14,19 +14,27 @@ interface SeoSettings {
   twitterTitle?: string;
   twitterDescription?: string;
   twitterImage?: string;
+  noindex?: boolean;
+  nofollow?: boolean;
+  priority?: number;
+  changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
 }
 
 interface IndexingResult {
   url: string;
-  status: 'success' | 'error';
+  status: 'success' | 'error' | 'pending';
   message: string;
   timestamp: string;
+  lastChecked?: string;
+  indexedAt?: string;
 }
 
 interface UrlCategory {
   name: string;
   type: 'posts' | 'videos' | 'products' | 'categories' | 'static';
   urls: string[];
+  priority?: number;
+  changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
 }
 
 export function SEODashboard() {
@@ -142,46 +150,66 @@ export function SEODashboard() {
     try {
       setFetchingUrls(true);
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://themidnightspa.com';
-      let fetchedUrls: string[] = [];
+      let fetchedUrls: { 
+        url: string; 
+        priority: number; 
+        changefreq: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
+      }[] = [];
 
       switch (type) {
         case 'posts':
           const postsRes = await fetch('/api/posts?published=true');
           if (!postsRes.ok) throw new Error('Failed to fetch posts');
           const posts = await postsRes.json();
-          fetchedUrls = posts.map((post: any) => `${baseUrl}/posts/${post.slug}`);
+          fetchedUrls = posts.map((post: any) => ({
+            url: `${baseUrl}/posts/${post.slug}`,
+            priority: 0.8,
+            changefreq: 'weekly'
+          }));
           break;
 
         case 'videos':
           const videosRes = await fetch('/api/videos?published=true');
           if (!videosRes.ok) throw new Error('Failed to fetch videos');
           const videos = await videosRes.json();
-          fetchedUrls = videos.map((video: any) => `${baseUrl}/videos/${video.slug}`);
+          fetchedUrls = videos.map((video: any) => ({
+            url: `${baseUrl}/videos/${video.slug}`,
+            priority: 0.7,
+            changefreq: 'weekly'
+          }));
           break;
 
         case 'products':
           const productsRes = await fetch('/api/products?published=true');
           if (!productsRes.ok) throw new Error('Failed to fetch products');
           const products = await productsRes.json();
-          fetchedUrls = products.map((product: any) => `${baseUrl}/shop/${product.slug}`);
+          fetchedUrls = products.map((product: any) => ({
+            url: `${baseUrl}/shop/${product.slug}`,
+            priority: 0.9,
+            changefreq: 'daily'
+          }));
           break;
 
         case 'categories':
           const categoriesRes = await fetch('/api/categories');
           if (!categoriesRes.ok) throw new Error('Failed to fetch categories');
           const categories = await categoriesRes.json();
-          fetchedUrls = categories.map((category: any) => `${baseUrl}/categories/${category.slug}`);
+          fetchedUrls = categories.map((category: any) => ({
+            url: `${baseUrl}/categories/${category.slug}`,
+            priority: 0.6,
+            changefreq: 'weekly'
+          }));
           break;
 
         case 'static':
           fetchedUrls = [
-            `${baseUrl}`,
-            `${baseUrl}/about`,
-            `${baseUrl}/contact`,
-            `${baseUrl}/services`,
-            `${baseUrl}/blog`,
-            `${baseUrl}/videos`,
-            `${baseUrl}/shop`,
+            { url: `${baseUrl}`, priority: 1.0, changefreq: 'daily' },
+            { url: `${baseUrl}/about`, priority: 0.5, changefreq: 'monthly' },
+            { url: `${baseUrl}/contact`, priority: 0.5, changefreq: 'monthly' },
+            { url: `${baseUrl}/services`, priority: 0.8, changefreq: 'weekly' },
+            { url: `${baseUrl}/blog`, priority: 0.7, changefreq: 'daily' },
+            { url: `${baseUrl}/videos`, priority: 0.7, changefreq: 'daily' },
+            { url: `${baseUrl}/shop`, priority: 0.9, changefreq: 'daily' },
           ];
           break;
       }
@@ -189,7 +217,9 @@ export function SEODashboard() {
       const category: UrlCategory = {
         name: type.charAt(0).toUpperCase() + type.slice(1),
         type,
-        urls: fetchedUrls,
+        urls: fetchedUrls.map(item => item.url),
+        priority: Math.max(...fetchedUrls.map(item => item.priority)),
+        changefreq: fetchedUrls[0]?.changefreq || 'weekly'
       };
 
       setUrlCategories(prev => {
@@ -198,11 +228,11 @@ export function SEODashboard() {
       });
 
       setSelectedCategory(type);
-      setUrls(fetchedUrls);
-      alert(`Found ${fetchedUrls.length} URLs for ${type}`);
+      setUrls(fetchedUrls.map(item => item.url));
+      toast.success(`Found ${fetchedUrls.length} URLs for ${type}`);
     } catch (err) {
       console.error(`Error fetching ${type} URLs:`, err);
-      alert(`Failed to fetch ${type} URLs`);
+      toast.error(`Failed to fetch ${type} URLs`);
     } finally {
       setFetchingUrls(false);
     }
@@ -212,27 +242,64 @@ export function SEODashboard() {
     setIsSubmitting(true);
     setSubmissionProgress({ current: 0, total: urls.length });
 
+    const results: IndexingResult[] = [];
+
     for (let i = 0; i < urls.length; i++) {
       try {
-        const response = await fetch('/api/seo/index-url', {
+        // First, check if URL is already indexed
+        const checkResponse = await fetch('/api/seo/check-indexing-status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ urls: [urls[i]] }),
+          body: JSON.stringify({ url: urls[i] }),
         });
 
-        if (!response.ok) throw new Error(`Failed to submit URL: ${urls[i]}`);
-        
+        if (!checkResponse.ok) throw new Error(`Failed to check indexing status for: ${urls[i]}`);
+        const checkData = await checkResponse.json();
+
+        if (!checkData.isIndexed) {
+          // If not indexed, submit for indexing
+          const response = await fetch('/api/seo/index-url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ urls: [urls[i]] }),
+          });
+
+          if (!response.ok) throw new Error(`Failed to submit URL: ${urls[i]}`);
+          
+          const data = await response.json();
+          results.push({
+            url: urls[i],
+            status: 'pending',
+            message: 'Submitted for indexing',
+            timestamp: new Date().toISOString(),
+          });
+        } else {
+          results.push({
+            url: urls[i],
+            status: 'success',
+            message: 'Already indexed',
+            timestamp: new Date().toISOString(),
+            indexedAt: checkData.indexedAt,
+          });
+        }
+
         setSubmissionProgress(prev => ({ ...prev, current: i + 1 }));
         await new Promise(resolve => setTimeout(resolve, 1000)); // Add delay between submissions
       } catch (err) {
         console.error('Error submitting URL:', urls[i], err);
+        results.push({
+          url: urls[i],
+          status: 'error',
+          message: err instanceof Error ? err.message : 'Unknown error occurred',
+          timestamp: new Date().toISOString(),
+        });
       }
     }
 
-    await loadIndexingHistory();
+    setIndexingResults(prev => [...results, ...prev]);
     setSelectedUrls([]);
     setIsSubmitting(false);
-    alert('Finished submitting URLs');
+    toast.success('Finished submitting URLs for indexing');
   };
 
   const handleUrlSelect = (url: string) => {
@@ -250,16 +317,42 @@ export function SEODashboard() {
   const handleGenerateSitemap = async () => {
     try {
       setLoading(true);
+      
+      // First, fetch all URLs from different categories
+      await Promise.all([
+        fetchUrlsByCategory('static'),
+        fetchUrlsByCategory('posts'),
+        fetchUrlsByCategory('videos'),
+        fetchUrlsByCategory('products'),
+        fetchUrlsByCategory('categories'),
+      ]);
+
+      // Generate sitemap with all URLs
       const response = await fetch('/api/sitemap/generate', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          urls: urlCategories.flatMap(category => 
+            category.urls.map(url => ({
+              url,
+              priority: category.priority,
+              changefreq: category.changefreq,
+            }))
+          ),
+        }),
       });
 
       if (!response.ok) throw new Error('Failed to generate sitemap');
       
       await checkSitemapStatus();
-      alert('Sitemap generated successfully');
+      toast.success('Sitemap generated successfully');
+
+      // Ping search engines
+      await fetch('/api/seo/ping-search-engines', { method: 'POST' });
+      toast.success('Search engines notified about sitemap update');
     } catch (err) {
-      alert('Failed to generate sitemap');
+      toast.error('Failed to generate sitemap');
+      console.error('Sitemap generation error:', err);
     } finally {
       setLoading(false);
     }
@@ -514,7 +607,7 @@ export function SEODashboard() {
               <h3 className="font-semibold mb-4">Recent Indexing Results</h3>
               <div className="space-y-2">
                 {indexingResults.map((result, index) => (
-                  <div key={index} className={`p-4 border rounded ${result.status === 'success' ? 'border-green-500' : 'border-red-500'}`}>
+                  <div key={index} className={`p-4 border rounded ${result.status === 'success' ? 'border-green-500' : result.status === 'error' ? 'border-red-500' : 'border-yellow-500'}`}>
                     <p>{result.url}</p>
                     <p className="text-sm text-gray-600">{result.message}</p>
                     <p className="text-xs text-gray-500">{result.timestamp}</p>
