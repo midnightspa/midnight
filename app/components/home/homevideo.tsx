@@ -113,18 +113,35 @@ export default async function HomeVideo() {
                     placeholder="blur"
                     blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
                   />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-16 h-16 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        strokeWidth={1.5} 
+                        stroke="currentColor" 
+                        className="w-16 h-16 text-white drop-shadow-lg"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+                        />
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" 
+                        />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
                 <div className="p-4">
                   <h3 className="text-lg font-semibold text-neutral-900 mb-2 line-clamp-2">
                     {video.title}
                   </h3>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-neutral-200"></div>
-                      <span className="text-sm text-neutral-600">
-                        {video.author.name}
-                      </span>
-                    </div>
+                  <div className="flex items-center justify-end">
                     <time className="text-sm text-neutral-500" dateTime={new Date(video.createdAt).toISOString()}>
                       {new Date(video.createdAt).toLocaleDateString('en-US', {
                         month: 'short',

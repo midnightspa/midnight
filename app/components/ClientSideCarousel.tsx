@@ -16,9 +16,6 @@ interface Props {
       title: string;
       slug: string;
     };
-    author: {
-      name: string;
-    };
   }>;
   blurDataURL: string;
 }
@@ -58,13 +55,7 @@ export default function ClientSideCarousel({ posts, blurDataURL }: Props) {
                     <h3 className="text-lg font-semibold text-neutral-900 mb-2 line-clamp-2">
                       {post.title}
                     </h3>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-neutral-200"></div>
-                        <span className="text-sm text-neutral-600">
-                          {post.author.name}
-                        </span>
-                      </div>
+                    <div className="flex items-center justify-end">
                       <time className="text-sm text-neutral-500" dateTime={new Date(post.createdAt).toISOString()}>
                         {new Date(post.createdAt).toLocaleDateString('en-US', {
                           month: 'short',

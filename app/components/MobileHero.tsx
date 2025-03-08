@@ -6,20 +6,19 @@ import { useInView } from 'framer-motion';
 import { getImageUrl } from '@/app/utils/imageUtils';
 import Image from 'next/image';
 
-interface Post {
-  id: string;
-  title: string;
-  excerpt: string;
-  thumbnail: string | null;
-  slug: string;
-  category: {
-    title: string;
-    slug: string;
-  } | null;
-}
-
 interface MobileHeroProps {
-  posts: Post[];
+  posts: Array<{
+    id: string;
+    title: string;
+    excerpt: string;
+    thumbnail: string | null;
+    createdAt: string;
+    category?: {
+      title: string;
+      slug: string;
+    };
+    slug: string;
+  }>;
 }
 
 export default function MobileHero({ posts }: MobileHeroProps) {

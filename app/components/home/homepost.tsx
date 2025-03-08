@@ -201,13 +201,7 @@ export default async function HomePost() {
                       <p className="text-neutral-600 line-clamp-2 mb-4 text-sm">
                         {post.excerpt}
                       </p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-neutral-200"></div>
-                          <span className="text-xs text-neutral-600">
-                            {post.author.name}
-                          </span>
-                        </div>
+                      <div className="flex items-center justify-end">
                         <time className="text-xs text-neutral-500" dateTime={new Date(post.createdAt).toISOString()}>
                           {new Date(post.createdAt).toLocaleDateString('en-US', {
                             month: 'short',

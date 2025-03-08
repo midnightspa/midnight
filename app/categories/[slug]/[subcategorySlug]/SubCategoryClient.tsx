@@ -17,9 +17,6 @@ interface Post {
   excerpt: string;
   thumbnail: string | null;
   createdAt: string;
-  author: {
-    name: string;
-  };
   category: {
     id: string;
     title: string;
@@ -278,16 +275,20 @@ export default function SubCategoryClient() {
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
-                  <div className="p-6">
-                    <h2 className="text-xl font-semibold text-neutral-900 group-hover:text-blue-600 transition-colors mb-2">
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold text-neutral-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
                       {post.title}
-                    </h2>
-                    <p className="text-neutral-600 mb-4 line-clamp-2">
+                    </h3>
+                    <p className="text-neutral-600 text-sm mb-4 line-clamp-2">
                       {post.excerpt}
                     </p>
-                    <div className="flex items-center justify-between text-sm text-neutral-500">
-                      <span>{post.author.name}</span>
-                      <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                    <div className="flex items-center justify-end">
+                      <time className="text-sm text-neutral-500" dateTime={new Date(post.createdAt).toISOString()}>
+                        {new Date(post.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </time>
                     </div>
                   </div>
                 </Link>

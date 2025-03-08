@@ -28,9 +28,6 @@ interface Post {
     title: string;
     slug: string;
   };
-  author: {
-    name: string;
-  };
 }
 
 interface RelatedPost {
@@ -49,11 +46,6 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       slug: resolvedParams.slug,
     },
     include: {
-      author: {
-        select: {
-          name: true
-        }
-      },
       category: {
         select: {
           title: true
@@ -72,11 +64,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
   return {
     title: post.seoTitle || post.title,
-    description: post.seoDescription || post.excerpt || `Read ${post.title} by ${post.author.name}`,
+    description: post.seoDescription || post.excerpt || post.title,
     keywords: post.seoKeywords || `${post.category?.title || ''}, spa, wellness, ${post.title}`.toLowerCase(),
     openGraph: {
       title: post.seoTitle || post.title,
-      description: post.seoDescription || post.excerpt || `Read ${post.title} by ${post.author.name}`,
+      description: post.seoDescription || post.excerpt || post.title,
       type: 'article',
       publishedTime: post.createdAt.toISOString(),
       images: post.thumbnail ? [
@@ -91,7 +83,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     twitter: {
       card: 'summary_large_image',
       title: post.seoTitle || post.title,
-      description: post.seoDescription || post.excerpt || `Read ${post.title} by ${post.author.name}`,
+      description: post.seoDescription || post.excerpt || post.title,
       images: post.thumbnail ? [post.thumbnail] : undefined
     }
   };
@@ -143,11 +135,6 @@ export default async function PostPage({ params }: { params: { slug: string } })
           title: true,
           slug: true,
         },
-      },
-      author: {
-        select: {
-          name: true
-        }
       }
     },
   });

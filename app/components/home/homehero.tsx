@@ -26,9 +26,6 @@ interface Post {
     title: string;
     slug: string;
   } | null;
-  author: {
-    name: string;
-  };
 }
 
 const shimmer = (w: number, h: number) => `
@@ -85,11 +82,6 @@ async function getPosts(): Promise<Post[]> {
             title: true,
             slug: true,
           }
-        },
-        author: {
-          select: {
-            name: true
-          }
         }
       }
     });
@@ -109,10 +101,7 @@ async function getPosts(): Promise<Post[]> {
       subcategory: post.subcategory ? {
         title: post.subcategory.title,
         slug: post.subcategory.slug,
-      } : null,
-      author: {
-        name: post.author?.name || 'Anonymous'
-      }
+      } : null
     }));
   } catch (error) {
     console.error('Error fetching posts:', error);
@@ -166,10 +155,7 @@ export default async function HomeHero() {
             thumbnailUrl: getImageUrl(post.thumbnail),
             createdAt: post.createdAt,
             slug: post.slug,
-            category: post.category || undefined,
-            author: {
-              name: post.author.name
-            }
+            category: post.category || undefined
           }))} 
           blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(700, 475))}`}
         />
