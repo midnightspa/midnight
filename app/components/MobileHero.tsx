@@ -123,11 +123,13 @@ export default function MobileHero({ posts }: MobileHeroProps) {
                         alt={post.title}
                         fill
                         className="object-cover"
-                        priority={index === 0}
-                        quality={index === 0 ? 85 : 75}
+                        priority={true}
+                        quality={85}
                         sizes="(max-width: 640px) 280px, 320px"
                         placeholder="blur"
                         blurDataURL={BLUR_DATA_URL}
+                        loading="eager"
+                        fetchPriority="high"
                       />
                       {post.category && (
                         <div className="absolute top-3 left-3 px-2 py-1 bg-white/90 backdrop-blur-sm text-neutral-900 text-xs font-medium rounded-full">

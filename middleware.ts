@@ -28,10 +28,23 @@ export async function middleware(request: NextRequest) {
   // Get the response
   const response = NextResponse.next();
 
-  // Add cache-control headers
-  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  response.headers.set('Pragma', 'no-cache');
-  response.headers.set('Expires', '0');
+  // Enable compression for API responses
+  if (path.startsWith('/api/')) {
+    response.headers.set('Content-Encoding', 'br, gzip, deflate');
+    response.headers.set('Accept-Encoding', 'br, gzip, deflate');
+  }
+
+  // Add aggressive caching for static assets
+  const isStaticAsset = /\.(js|css|svg|jpg|jpeg|png|gif|ico|woff|woff2)$/i.test(path);
+  if (isStaticAsset) {
+    response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+    response.headers.set('Content-Encoding', 'br, gzip, deflate');
+  }
+
+  // Add caching for API responses
+  if (path.startsWith('/api/')) {
+    response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+  }
 
   // Add security headers
   response.headers.set('X-DNS-Prefetch-Control', 'on');
@@ -42,12 +55,6 @@ export async function middleware(request: NextRequest) {
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
-  // Add caching headers for static assets
-  const isStaticAsset = /\.(js|css|svg|jpg|jpeg|png|gif|ico|woff|woff2)$/i.test(path);
-  if (isStaticAsset) {
-    response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-  }
-
   return response;
 }
 
@@ -55,11 +62,10 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }; 

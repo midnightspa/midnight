@@ -1,10 +1,11 @@
 import type { NextConfig } from 'next'
+import withBundleAnalyzer from '@next/bundle-analyzer'
 
 const nextConfig: NextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    deviceSizes: [280, 320, 640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256],
     minimumCacheTTL: 60 * 60 * 24 * 7, // 7 days
     remotePatterns: [
       {
@@ -15,13 +16,50 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizeCss: true,
-    optimizePackageImports: ['@heroicons/react', '@radix-ui/react-icons'],
+    optimizePackageImports: ['@heroicons/react', '@radix-ui/react-icons', 'lucide-react'],
+    webpackBuildWorker: true,
+    turbotrace: {
+      logLevel: 'error',
+      logDetail: true,
+    },
   },
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
+  },
+  webpack: (config, { dev, isServer }) => {
+    // Optimize CSS
+    if (!dev && !isServer) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          minSize: 20000,
+          maxSize: 50000,
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            commons: {
+              name: 'commons',
+              chunks: 'all',
+              minChunks: 2,
+            },
+            shared: {
+              name: (module: any) => {
+                const match = module.identifier().match(/node_modules\/(.*?)\//)
+                return match ? `shared-${match[1]}` : 'shared'
+              },
+              test: /[\\/]node_modules[\\/]/,
+              chunks: 'all',
+              priority: 10,
+            },
+          },
+        },
+      }
+    }
+    return config
   },
   headers: async () => {
     return [
@@ -33,6 +71,15 @@ const nextConfig: NextConfig = {
             key: 'Cache-Control',
             value: 'public, max-age=31536000, immutable',
           }
+        ],
+      },
+      {
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=60, stale-while-revalidate=300',
+          },
         ],
       },
       {
@@ -60,4 +107,9 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig 
+// Analyze bundle in production
+const config = process.env.ANALYZE === 'true' 
+  ? withBundleAnalyzer({})(nextConfig)
+  : nextConfig
+
+export default config 
