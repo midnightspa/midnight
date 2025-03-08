@@ -1,6 +1,6 @@
+"use client";
+
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from '@/components/ui/skeleton';
 
 interface CartStatsProps {}
 
@@ -65,17 +65,17 @@ const CartStats: React.FC<CartStatsProps> = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Cart Activity</CardTitle>
-        <CardDescription>User cart behavior statistics</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold">Cart Activity</h2>
+        <p className="text-sm text-gray-500">User cart behavior statistics</p>
+      </div>
+      <div className="mt-4">
         {loading ? (
           <div className="space-y-2">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
+            <div className="h-4 bg-gray-200 rounded animate-pulse w-full" />
+            <div className="h-4 bg-gray-200 rounded animate-pulse w-full" />
+            <div className="h-4 bg-gray-200 rounded animate-pulse w-full" />
           </div>
         ) : error ? (
           <div className="p-4 text-sm text-red-800 bg-red-100 rounded-md">
@@ -99,7 +99,7 @@ const CartStats: React.FC<CartStatsProps> = () => {
                       <div 
                         className="bg-blue-600 h-2.5 rounded-full" 
                         style={{ width: `${stat.percentage}%` }}
-                      ></div>
+                      />
                     </div>
                   )}
                 </div>
@@ -107,8 +107,8 @@ const CartStats: React.FC<CartStatsProps> = () => {
             )}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
