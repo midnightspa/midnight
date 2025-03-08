@@ -30,14 +30,13 @@ export default function MobileHero({ posts }: MobileHeroProps) {
   const { ref: headerRef, inView: isHeaderInView } = useInView({ 
     triggerOnce: true,
     threshold: 0.1,
-    initialInView: true // Ensure consistent initial render
+    initialInView: true
   });
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Only add event listeners after hydration
   useEffect(() => {
     if (!mounted) return;
 
@@ -68,46 +67,43 @@ export default function MobileHero({ posts }: MobileHeroProps) {
     }
   };
 
-  // Initial loading state
-  const loadingContent = (
-    <div className="animate-pulse bg-gray-200 h-[70vh]">
-      <div className="container mx-auto px-4 py-8">
-        <div className="h-8 bg-gray-300 w-3/4 mx-auto mb-4 rounded"></div>
-        <div className="h-4 bg-gray-300 w-1/2 mx-auto rounded"></div>
-      </div>
-    </div>
-  );
-
   if (!mounted) {
-    return loadingContent;
+    return (
+      <div className="animate-pulse bg-gray-200 h-[60vh] sm:h-[50vh]">
+        <div className="container mx-auto px-4 py-8">
+          <div className="h-8 bg-gray-300 w-3/4 mx-auto mb-4 rounded"></div>
+          <div className="h-4 bg-gray-300 w-1/2 mx-auto rounded"></div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="lg:hidden">
-      <div className="container mx-auto px-4 py-8">
+    <div className="lg:hidden bg-gradient-to-b from-neutral-50 to-white">
+      <div className="container mx-auto px-4 py-6">
         {/* Header Section */}
         <div 
           ref={headerRef}
-          className="text-center mb-8 transition-all duration-500"
+          className="text-center mb-6 transition-all duration-500"
           style={{
             opacity: isHeaderInView ? 1 : 0,
             transform: isHeaderInView ? 'translateY(0)' : 'translateY(20px)'
           }}
         >
-          <h1 className="text-4xl font-bold text-neutral-900 mb-3">
+          <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 mb-2">
             Dream Beyond <span className="text-neutral-700">Limits</span>
           </h1>
-          <p className="text-lg text-neutral-600 max-w-md mx-auto">
-            Discover tips, insights, and practices to reclaim your nights and embrace tranquility.
+          <p className="text-base sm:text-lg text-neutral-600 max-w-md mx-auto">
+            Discover tips, insights, and practices to reclaim your nights.
           </p>
         </div>
 
         {/* Carousel Container */}
-        <div className="relative mb-6">
+        <div className="relative mb-4">
           {/* Carousel Track */}
           <div 
             ref={carouselRef}
-            className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+            className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-4"
             style={{ 
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
@@ -117,22 +113,29 @@ export default function MobileHero({ posts }: MobileHeroProps) {
             {posts.slice(0, 3).map((post, index) => (
               <div 
                 key={post.id}
-                className="min-w-full w-full flex-shrink-0 snap-center px-1"
+                className="min-w-[85%] sm:min-w-[70%] flex-shrink-0 snap-center"
               >
                 <Link href={`/posts/${post.slug}`} className="block">
-                  <div className="relative aspect-[16/9] rounded-lg overflow-hidden">
-                    <Image
-                      src={post.thumbnail}
-                      alt={post.title}
-                      fill
-                      className="object-cover"
-                      priority={index === 0}
-                      quality={index === 0 ? 90 : 75}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
-                    <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
-                      <h2 className="text-2xl font-bold text-white mb-2">{post.title}</h2>
-                      <p className="text-white/80">{post.excerpt}</p>
+                  <div className="bg-white rounded-2xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl hover:transform hover:scale-[1.02]">
+                    <div className="relative aspect-[16/10] sm:aspect-[16/9]">
+                      <Image
+                        src={post.thumbnail}
+                        alt={post.title}
+                        fill
+                        className="object-cover"
+                        priority={index === 0}
+                        quality={index === 0 ? 90 : 75}
+                        sizes="(max-width: 640px) 85vw, (max-width: 1024px) 70vw, 33vw"
+                      />
+                      {post.category && (
+                        <div className="absolute top-4 left-4 px-3 py-1 bg-white/90 backdrop-blur-sm text-neutral-900 text-sm font-medium rounded-full">
+                          {post.category.title}
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4 sm:p-5">
+                      <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 mb-2 line-clamp-2">{post.title}</h2>
+                      <p className="text-neutral-600 line-clamp-2 text-sm sm:text-base">{post.excerpt}</p>
                     </div>
                   </div>
                 </Link>
@@ -146,7 +149,7 @@ export default function MobileHero({ posts }: MobileHeroProps) {
               <button
                 key={index}
                 onClick={() => handleDotClick(index)}
-                className={`w-2 h-2 rounded-full transition-all ${
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
                   index === activeIndex ? 'bg-neutral-900 w-4' : 'bg-neutral-300'
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
@@ -157,7 +160,7 @@ export default function MobileHero({ posts }: MobileHeroProps) {
 
         {/* CTA Buttons */}
         <div 
-          className="mt-8 flex flex-wrap justify-center gap-3 transition-all duration-500"
+          className="mt-6 flex flex-wrap justify-center gap-3 transition-all duration-500"
           style={{
             opacity: isHeaderInView ? 1 : 0,
             transform: isHeaderInView ? 'translateY(0)' : 'translateY(20px)'
@@ -165,13 +168,13 @@ export default function MobileHero({ posts }: MobileHeroProps) {
         >
           <Link
             href="/categories"
-            className="inline-flex items-center px-5 py-2.5 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors text-sm font-medium"
+            className="inline-flex items-center px-5 py-2.5 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors text-sm font-medium shadow-sm hover:shadow-md"
           >
             Explore Categories
           </Link>
           <Link
             href="/videos"
-            className="inline-flex items-center px-5 py-2.5 bg-white text-neutral-900 rounded-lg hover:bg-neutral-50 transition-colors border border-neutral-200 text-sm font-medium"
+            className="inline-flex items-center px-5 py-2.5 bg-white text-neutral-900 rounded-lg hover:bg-neutral-50 transition-colors border border-neutral-200 text-sm font-medium shadow-sm hover:shadow-md"
           >
             Watch Videos
           </Link>
