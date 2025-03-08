@@ -1,12 +1,30 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Poppins } from 'next/font/google';
 import { generateStructuredData, getSiteSettings } from '@/lib/seo';
 import Script from 'next/script';
+import dynamic from 'next/dynamic';
 import HomeHero from '@/app/components/home/homehero';
-import HomeCategory from '@/app/components/home/homecategory';
-import HomeSubcategory from '@/app/components/home/homesubcategory';
-import HomeVideo from '@/app/components/home/homevideo';
-import HomePost from '@/app/components/home/homepost';
+
+// Dynamically import non-critical components
+const HomeCategory = dynamic(() => import('@/app/components/home/homecategory'), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-64 rounded-xl" />,
+  ssr: true
+});
+
+const HomeSubcategory = dynamic(() => import('@/app/components/home/homesubcategory'), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-64 rounded-xl" />,
+  ssr: true
+});
+
+const HomeVideo = dynamic(() => import('@/app/components/home/homevideo'), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-64 rounded-xl" />,
+  ssr: true
+});
+
+const HomePost = dynamic(() => import('@/app/components/home/homepost'), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-64 rounded-xl" />,
+  ssr: true
+});
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -42,11 +60,25 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <div className={`min-h-screen bg-white ${poppins.className}`}>
-        <HomeHero />
-        <HomeCategory />
-        <HomeSubcategory />
-        <HomeVideo />
-        <HomePost />
+        <Suspense fallback={<div className="animate-pulse bg-gray-200 h-[70vh] rounded-xl" />}>
+          <HomeHero />
+        </Suspense>
+        
+        <Suspense fallback={<div className="animate-pulse bg-gray-200 h-64 rounded-xl" />}>
+          <HomeCategory />
+        </Suspense>
+
+        <Suspense fallback={<div className="animate-pulse bg-gray-200 h-64 rounded-xl" />}>
+          <HomeSubcategory />
+        </Suspense>
+
+        <Suspense fallback={<div className="animate-pulse bg-gray-200 h-64 rounded-xl" />}>
+          <HomeVideo />
+        </Suspense>
+
+        <Suspense fallback={<div className="animate-pulse bg-gray-200 h-64 rounded-xl" />}>
+          <HomePost />
+        </Suspense>
       </div>
     </>
   );
