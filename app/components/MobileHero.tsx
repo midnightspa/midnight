@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useInView } from 'framer-motion';
-import { getImageUrl } from '@/app/utils/imageUtils';
+import { useInView } from 'react-intersection-observer';
 import Image from 'next/image';
 
 interface MobileHeroProps {
@@ -11,24 +10,55 @@ interface MobileHeroProps {
     id: string;
     title: string;
     excerpt: string;
-    thumbnail: string | null;
+    thumbnail: string;
     createdAt: string;
-    category?: {
+    tags: string[];
+    slug: string;
+    category: {
       title: string;
       slug: string;
-    };
-    slug: string;
+    } | null;
   }>;
 }
 
+const BLUR_DATA_URL = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx4eHRseHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/2wBDAR4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=";
+
 export default function MobileHero({ posts }: MobileHeroProps) {
-  const headerRef = useRef(null);
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const isHeaderInView = useInView(headerRef, { once: true });
+  const [mounted, setMounted] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  
-  // Handle dot indicator click
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const { ref: headerRef, inView: isHeaderInView } = useInView({ 
+    triggerOnce: true,
+    threshold: 0.1,
+    initialInView: true // Ensure consistent initial render
+  });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Only add event listeners after hydration
+  useEffect(() => {
+    if (!mounted) return;
+
+    const currentRef = carouselRef.current;
+    if (currentRef) {
+      const handleScroll = () => {
+        const scrollPosition = currentRef.scrollLeft;
+        const slideWidth = currentRef.offsetWidth;
+        const newIndex = Math.round(scrollPosition / slideWidth);
+        if (newIndex !== activeIndex) {
+          setActiveIndex(newIndex);
+        }
+      };
+
+      currentRef.addEventListener('scroll', handleScroll);
+      return () => currentRef.removeEventListener('scroll', handleScroll);
+    }
+  }, [mounted, activeIndex]);
+
   const handleDotClick = (index: number) => {
+    if (!mounted) return;
     setActiveIndex(index);
     if (carouselRef.current) {
       carouselRef.current.scrollTo({
@@ -37,30 +67,31 @@ export default function MobileHero({ posts }: MobileHeroProps) {
       });
     }
   };
-  
-  // Handle scroll event to update active index
-  const handleScroll = () => {
-    if (carouselRef.current) {
-      const scrollPosition = carouselRef.current.scrollLeft;
-      const slideWidth = carouselRef.current.offsetWidth;
-      const newIndex = Math.round(scrollPosition / slideWidth);
-      if (newIndex !== activeIndex) {
-        setActiveIndex(newIndex);
-      }
-    }
-  };
-  
+
+  // Initial loading state
+  const loadingContent = (
+    <div className="animate-pulse bg-gray-200 h-[70vh]">
+      <div className="container mx-auto px-4 py-8">
+        <div className="h-8 bg-gray-300 w-3/4 mx-auto mb-4 rounded"></div>
+        <div className="h-4 bg-gray-300 w-1/2 mx-auto rounded"></div>
+      </div>
+    </div>
+  );
+
+  if (!mounted) {
+    return loadingContent;
+  }
+
   return (
     <div className="lg:hidden">
       <div className="container mx-auto px-4 py-8">
         {/* Header Section */}
         <div 
           ref={headerRef}
-          className="text-center mb-8"
+          className="text-center mb-8 transition-all duration-500"
           style={{
             opacity: isHeaderInView ? 1 : 0,
-            transform: isHeaderInView ? 'translateY(0)' : 'translateY(20px)',
-            transition: 'opacity 0.5s ease, transform 0.5s ease'
+            transform: isHeaderInView ? 'translateY(0)' : 'translateY(20px)'
           }}
         >
           <h1 className="text-4xl font-bold text-neutral-900 mb-3">
@@ -82,55 +113,41 @@ export default function MobileHero({ posts }: MobileHeroProps) {
               msOverflowStyle: 'none',
               WebkitOverflowScrolling: 'touch'
             }}
-            onScroll={handleScroll}
           >
             {posts.slice(0, 3).map((post, index) => (
               <div 
                 key={post.id}
                 className="min-w-full w-full flex-shrink-0 snap-center px-1"
               >
-                <Link href={`/posts/${post.slug}`}>
-                  <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 h-full">
-                    <div className="relative aspect-[16/9]">
-                      <Image
-                        src={getImageUrl(post.thumbnail)}
-                        alt={post.title}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                        className="object-cover"
-                        priority={index === 0}
-                        loading={index === 0 ? "eager" : "lazy"}
-                      />
-                      {post.category && (
-                        <span className="absolute top-3 left-3 px-3 py-1 bg-white/90 backdrop-blur-sm text-neutral-900 text-xs font-medium rounded-full">
-                          {post.category.title}
-                        </span>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h2 className="text-xl font-semibold text-neutral-900 mb-2 line-clamp-2">
-                        {post.title}
-                      </h2>
-                      <p className="text-neutral-600 text-sm line-clamp-2">
-                        {post.excerpt}
-                      </p>
+                <Link href={`/posts/${post.slug}`} className="block">
+                  <div className="relative aspect-[16/9] rounded-lg overflow-hidden">
+                    <Image
+                      src={post.thumbnail}
+                      alt={post.title}
+                      fill
+                      className="object-cover"
+                      priority={index === 0}
+                      quality={index === 0 ? 90 : 75}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
+                    <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
+                      <h2 className="text-2xl font-bold text-white mb-2">{post.title}</h2>
+                      <p className="text-white/80">{post.excerpt}</p>
                     </div>
                   </div>
                 </Link>
               </div>
             ))}
           </div>
-          
-          {/* Dot Indicators */}
-          <div className="flex justify-center mt-4 gap-2">
+
+          {/* Dot indicators */}
+          <div className="flex justify-center gap-2 mt-4">
             {posts.slice(0, 3).map((_, index) => (
               <button
                 key={index}
                 onClick={() => handleDotClick(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  activeIndex === index 
-                    ? 'bg-neutral-900 w-4' 
-                    : 'bg-neutral-300'
+                className={`w-2 h-2 rounded-full transition-all ${
+                  index === activeIndex ? 'bg-neutral-900 w-4' : 'bg-neutral-300'
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
@@ -140,11 +157,10 @@ export default function MobileHero({ posts }: MobileHeroProps) {
 
         {/* CTA Buttons */}
         <div 
-          className="mt-8 flex flex-wrap justify-center gap-3"
+          className="mt-8 flex flex-wrap justify-center gap-3 transition-all duration-500"
           style={{
             opacity: isHeaderInView ? 1 : 0,
-            transform: isHeaderInView ? 'translateY(0)' : 'translateY(20px)',
-            transition: 'opacity 0.5s ease 0.3s, transform 0.5s ease 0.3s'
+            transform: isHeaderInView ? 'translateY(0)' : 'translateY(20px)'
           }}
         >
           <Link
