@@ -103,7 +103,7 @@ export default function MobileHero({ posts }: MobileHeroProps) {
           {/* Carousel Track */}
           <div 
             ref={carouselRef}
-            className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-4"
+            className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-3"
             style={{ 
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
@@ -113,29 +113,31 @@ export default function MobileHero({ posts }: MobileHeroProps) {
             {posts.slice(0, 3).map((post, index) => (
               <div 
                 key={post.id}
-                className="min-w-[85%] sm:min-w-[70%] flex-shrink-0 snap-center"
+                className="min-w-[280px] w-[280px] sm:min-w-[320px] sm:w-[320px] flex-shrink-0 snap-center"
               >
                 <Link href={`/posts/${post.slug}`} className="block">
-                  <div className="bg-white rounded-2xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl hover:transform hover:scale-[1.02]">
-                    <div className="relative aspect-[16/10] sm:aspect-[16/9]">
+                  <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+                    <div className="relative aspect-[4/3]">
                       <Image
                         src={post.thumbnail}
                         alt={post.title}
                         fill
                         className="object-cover"
                         priority={index === 0}
-                        quality={index === 0 ? 90 : 75}
-                        sizes="(max-width: 640px) 85vw, (max-width: 1024px) 70vw, 33vw"
+                        quality={index === 0 ? 85 : 75}
+                        sizes="(max-width: 640px) 280px, 320px"
+                        placeholder="blur"
+                        blurDataURL={BLUR_DATA_URL}
                       />
                       {post.category && (
-                        <div className="absolute top-4 left-4 px-3 py-1 bg-white/90 backdrop-blur-sm text-neutral-900 text-sm font-medium rounded-full">
+                        <div className="absolute top-3 left-3 px-2 py-1 bg-white/90 backdrop-blur-sm text-neutral-900 text-xs font-medium rounded-full">
                           {post.category.title}
                         </div>
                       )}
                     </div>
-                    <div className="p-4 sm:p-5">
-                      <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 mb-2 line-clamp-2">{post.title}</h2>
-                      <p className="text-neutral-600 line-clamp-2 text-sm sm:text-base">{post.excerpt}</p>
+                    <div className="p-3 sm:p-4">
+                      <h2 className="text-lg sm:text-xl font-bold text-neutral-900 mb-1.5 line-clamp-2">{post.title}</h2>
+                      <p className="text-sm text-neutral-600 line-clamp-2">{post.excerpt}</p>
                     </div>
                   </div>
                 </Link>
@@ -144,13 +146,13 @@ export default function MobileHero({ posts }: MobileHeroProps) {
           </div>
 
           {/* Dot indicators */}
-          <div className="flex justify-center gap-2 mt-4">
+          <div className="flex justify-center gap-1.5 mt-4">
             {posts.slice(0, 3).map((_, index) => (
               <button
                 key={index}
                 onClick={() => handleDotClick(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  index === activeIndex ? 'bg-neutral-900 w-4' : 'bg-neutral-300'
+                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                  index === activeIndex ? 'bg-neutral-900 w-3' : 'bg-neutral-300'
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
@@ -168,13 +170,13 @@ export default function MobileHero({ posts }: MobileHeroProps) {
         >
           <Link
             href="/categories"
-            className="inline-flex items-center px-5 py-2.5 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors text-sm font-medium shadow-sm hover:shadow-md"
+            className="inline-flex items-center px-4 py-2 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors text-sm font-medium shadow-sm hover:shadow-md"
           >
             Explore Categories
           </Link>
           <Link
             href="/videos"
-            className="inline-flex items-center px-5 py-2.5 bg-white text-neutral-900 rounded-lg hover:bg-neutral-50 transition-colors border border-neutral-200 text-sm font-medium shadow-sm hover:shadow-md"
+            className="inline-flex items-center px-4 py-2 bg-white text-neutral-900 rounded-lg hover:bg-neutral-50 transition-colors border border-neutral-200 text-sm font-medium shadow-sm hover:shadow-md"
           >
             Watch Videos
           </Link>
