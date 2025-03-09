@@ -37,51 +37,34 @@ export default function MobileHero({ posts }: MobileHeroProps) {
   const firstPostImage = posts[0]?.thumbnail;
 
   useEffect(() => {
-    // Preload the first image using a more reliable method
-    if (firstPostImage) {
-      const preloadLink = document.createElement('link');
-      preloadLink.rel = 'preload';
-      preloadLink.as = 'image';
-      preloadLink.href = firstPostImage;
-      document.head.appendChild(preloadLink);
-    }
     setMounted(true);
-  }, [firstPostImage]);
+  }, []);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || !carouselRef.current) return;
 
-    const currentRef = carouselRef.current;
-    if (currentRef) {
-      const handleScroll = () => {
-        const scrollPosition = currentRef.scrollLeft;
-        const slideWidth = currentRef.offsetWidth;
-        const newIndex = Math.round(scrollPosition / slideWidth);
-        if (newIndex !== activeIndex) {
-          setActiveIndex(newIndex);
-        }
-      };
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = Number(entry.target.getAttribute('data-index'));
+            if (!isNaN(index)) setActiveIndex(index);
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
 
-      currentRef.addEventListener('scroll', handleScroll);
-      return () => currentRef.removeEventListener('scroll', handleScroll);
-    }
-  }, [mounted, activeIndex]);
+    const slides = carouselRef.current.querySelectorAll('[data-index]');
+    slides.forEach((slide) => observer.observe(slide));
 
-  const handleDotClick = (index: number) => {
-    if (!mounted) return;
-    setActiveIndex(index);
-    if (carouselRef.current) {
-      carouselRef.current.scrollTo({
-        left: index * carouselRef.current.offsetWidth,
-        behavior: 'smooth'
-      });
-    }
-  };
+    return () => observer.disconnect();
+  }, [mounted]);
 
   if (!mounted) {
     return (
-      <div className="animate-pulse bg-gray-200 h-[60vh] sm:h-[50vh]">
-        <div className="container mx-auto px-4 py-8">
+      <div className="animate-pulse bg-gray-200 h-[50vh] sm:h-[45vh]">
+        <div className="container mx-auto px-4 py-6">
           <div className="h-8 bg-gray-300 w-3/4 mx-auto mb-4 rounded"></div>
           <div className="h-4 bg-gray-300 w-1/2 mx-auto rounded"></div>
         </div>
@@ -91,29 +74,18 @@ export default function MobileHero({ posts }: MobileHeroProps) {
 
   return (
     <div className="lg:hidden bg-gradient-to-b from-neutral-50 to-white">
-      {firstPostImage && (
-        <link
-          rel="preload"
-          as="image"
-          href={firstPostImage}
-          imageSrcSet={`${firstPostImage}?w=280 280w, ${firstPostImage}?w=320 320w`}
-          imageSizes="(max-width: 640px) 280px, 320px"
-        />
-      )}
       <div className="container mx-auto px-4 py-6">
         {/* Header Section */}
         <div 
           ref={headerRef}
-          className="text-center mb-6 transition-all duration-500"
-          style={{
-            opacity: isHeaderInView ? 1 : 0,
-            transform: isHeaderInView ? 'translateY(0)' : 'translateY(20px)'
-          }}
+          className={`text-center mb-6 transition-opacity duration-500 ${
+            isHeaderInView ? 'opacity-100' : 'opacity-0'
+          }`}
         >
-          <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 mb-2">
             Dream Beyond <span className="text-neutral-700">Limits</span>
           </h1>
-          <p className="text-base sm:text-lg text-neutral-600 max-w-md mx-auto">
+          <p className="text-sm sm:text-base text-neutral-600 max-w-md mx-auto">
             Discover tips, insights, and practices to reclaim your nights.
           </p>
         </div>
@@ -124,19 +96,16 @@ export default function MobileHero({ posts }: MobileHeroProps) {
           <div 
             ref={carouselRef}
             className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-3"
-            style={{ 
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              WebkitOverflowScrolling: 'touch'
-            }}
+            style={{ scrollbarWidth: 'none' }}
           >
             {posts.slice(0, 3).map((post, index) => (
               <div 
                 key={post.id}
-                className="min-w-[280px] w-[280px] sm:min-w-[320px] sm:w-[320px] flex-shrink-0 snap-center"
+                data-index={index}
+                className="min-w-[280px] w-[280px] flex-shrink-0 snap-center"
               >
                 <Link href={`/posts/${post.slug}`} className="block">
-                  <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+                  <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                     <div className="relative aspect-[4/3]">
                       <Image
                         src={post.thumbnail}
@@ -144,24 +113,21 @@ export default function MobileHero({ posts }: MobileHeroProps) {
                         fill
                         className="object-cover"
                         priority={index === 0}
-                        quality={index === 0 ? 90 : 75}
-                        sizes="(max-width: 640px) 280px, 320px"
+                        quality={75}
+                        sizes="280px"
                         placeholder="blur"
                         blurDataURL={BLUR_DATA_URL}
                         loading={index === 0 ? "eager" : "lazy"}
-                        fetchPriority={index === 0 ? "high" : "auto"}
-                        width={320}
-                        height={240}
                       />
                       {post.category && (
-                        <div className="absolute top-3 left-3 px-2 py-1 bg-white/90 backdrop-blur-sm text-neutral-900 text-xs font-medium rounded-full">
+                        <div className="absolute top-2 left-2 px-2 py-0.5 bg-white/90 backdrop-blur-sm text-neutral-900 text-xs font-medium rounded-full">
                           {post.category.title}
                         </div>
                       )}
                     </div>
-                    <div className="p-3 sm:p-4">
-                      <h2 className="text-lg sm:text-xl font-bold text-neutral-900 mb-1.5 line-clamp-2">{post.title}</h2>
-                      <p className="text-sm text-neutral-600 line-clamp-2">{post.excerpt}</p>
+                    <div className="p-3">
+                      <h2 className="text-base font-bold text-neutral-900 mb-1 line-clamp-2">{post.title}</h2>
+                      <p className="text-xs text-neutral-600 line-clamp-2">{post.excerpt}</p>
                     </div>
                   </div>
                 </Link>
@@ -170,14 +136,34 @@ export default function MobileHero({ posts }: MobileHeroProps) {
           </div>
 
           {/* Dot indicators */}
-          <div className="flex justify-center gap-1.5 mt-4">
+          <div className="flex justify-center gap-1 mt-3">
             {posts.slice(0, 3).map((_, index) => (
-              <button
+              <div
                 key={index}
-                onClick={() => handleDotClick(index)}
-                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                  index === activeIndex ? 'bg-neutral-900 w-3' : 'bg-neutral-300'
+                className={`h-1 rounded-full transition-all duration-300 ${
+                  index === activeIndex ? 'w-4 bg-neutral-900' : 'w-1 bg-neutral-300'
                 }`}
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  if (carouselRef.current) {
+                    carouselRef.current.scrollTo({
+                      left: index * 280,
+                      behavior: 'smooth'
+                    });
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (carouselRef.current) {
+                      carouselRef.current.scrollTo({
+                        left: index * 280,
+                        behavior: 'smooth'
+                      });
+                    }
+                  }
+                }}
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}
@@ -186,21 +172,19 @@ export default function MobileHero({ posts }: MobileHeroProps) {
 
         {/* CTA Buttons */}
         <div 
-          className="mt-6 flex flex-wrap justify-center gap-3 transition-all duration-500"
-          style={{
-            opacity: isHeaderInView ? 1 : 0,
-            transform: isHeaderInView ? 'translateY(0)' : 'translateY(20px)'
-          }}
+          className={`mt-4 flex justify-center gap-2 transition-opacity duration-500 ${
+            isHeaderInView ? 'opacity-100' : 'opacity-0'
+          }`}
         >
           <Link
             href="/categories"
-            className="inline-flex items-center px-4 py-2 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors text-sm font-medium shadow-sm hover:shadow-md"
+            className="px-3 py-1.5 bg-neutral-900 text-white text-sm rounded-lg hover:bg-neutral-800 transition-colors"
           >
             Explore Categories
           </Link>
           <Link
             href="/videos"
-            className="inline-flex items-center px-4 py-2 bg-white text-neutral-900 rounded-lg hover:bg-neutral-50 transition-colors border border-neutral-200 text-sm font-medium shadow-sm hover:shadow-md"
+            className="px-3 py-1.5 bg-white text-neutral-900 text-sm rounded-lg hover:bg-neutral-50 transition-colors border border-neutral-200"
           >
             Watch Videos
           </Link>
