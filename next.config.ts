@@ -24,14 +24,7 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizeCss: true,
     optimizePackageImports: ['@heroicons/react', '@radix-ui/react-icons', 'lucide-react'],
-    webpackBuildWorker: true,
-    turbotrace: {
-      logLevel: 'error',
-      logDetail: true,
-    },
     scrollRestoration: true,
-    workerThreads: true,
-    optimizeServerReact: true,
   },
   compress: true,
   poweredByHeader: false,
@@ -56,15 +49,6 @@ const nextConfig: NextConfig = {
               chunks: 'all',
               minChunks: 2,
             },
-            shared: {
-              name: (module: any) => {
-                const match = module.identifier().match(/node_modules\/(.*?)\//)
-                return match ? `shared-${match[1]}` : 'shared'
-              },
-              test: /[\\/]node_modules[\\/]/,
-              chunks: 'all',
-              priority: 10,
-            },
           },
         },
       }
@@ -82,17 +66,11 @@ const nextConfig: NextConfig = {
                 progressive: true,
                 quality: 85,
               },
-              optipng: {
-                enabled: false,
-              },
               pngquant: {
                 quality: [0.65, 0.90],
                 speed: 4,
               },
               webp: {
-                quality: 85,
-              },
-              avif: {
                 quality: 85,
               },
             },

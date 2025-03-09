@@ -37,10 +37,13 @@ export default function MobileHero({ posts }: MobileHeroProps) {
   const firstPostImage = posts[0]?.thumbnail;
 
   useEffect(() => {
-    // Preload the first image
+    // Preload the first image using a more reliable method
     if (firstPostImage) {
-      const img = new Image();
-      img.src = firstPostImage;
+      const preloadLink = document.createElement('link');
+      preloadLink.rel = 'preload';
+      preloadLink.as = 'image';
+      preloadLink.href = firstPostImage;
+      document.head.appendChild(preloadLink);
     }
     setMounted(true);
   }, [firstPostImage]);
