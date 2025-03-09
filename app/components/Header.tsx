@@ -137,6 +137,8 @@ export default function Header() {
             >
               <button
                 className="text-neutral-900 hover:text-neutral-600 font-medium transition-colors flex items-center gap-1"
+                aria-expanded={isBlogMenuOpen}
+                aria-label="Toggle blog menu"
               >
                 Blog
                 <ClientOnly>
@@ -144,7 +146,7 @@ export default function Header() {
                     animate={{ rotate: isBlogMenuOpen ? "180deg" : "0deg" }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
                   >
-                    <FiChevronDown />
+                    <FiChevronDown aria-hidden="true" />
                   </motion.div>
                 </ClientOnly>
               </button>
@@ -212,6 +214,7 @@ export default function Header() {
             <button
               onClick={() => setIsSearchOpen(true)}
               className="p-2 hover:bg-neutral-100 rounded-full transition-colors"
+              aria-label="Open search"
             >
               <FiSearch className="w-5 h-5 text-neutral-900" />
             </button>
@@ -220,6 +223,7 @@ export default function Header() {
             <button
               onClick={() => setIsMobileMenuOpen(true)}
               className="lg:hidden p-2 hover:bg-neutral-100 rounded-full transition-colors"
+              aria-label="Open menu"
             >
               <FiMenu className="w-6 h-6 text-neutral-900" />
             </button>

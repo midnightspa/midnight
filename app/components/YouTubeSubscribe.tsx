@@ -1,44 +1,26 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 
-declare global {
-  interface Window {
-    gapi: any;
-  }
-}
-
-interface YouTubeSubscribeProps {
-  channelId: string;
-  layout?: 'default' | 'full';
-  count?: 'default' | 'hidden';
-}
-
-const YouTubeSubscribe: React.FC<YouTubeSubscribeProps> = ({
-  channelId,
-  layout = 'default',
-  count = 'default',
-}) => {
-  useEffect(() => {
-    // Load the YouTube platform script
-    const script = document.createElement('script');
-    script.src = 'https://apis.google.com/js/platform.js';
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      // Cleanup: remove the script when component unmounts
-      document.body.removeChild(script);
-    };
-  }, []);
-
+export default function YouTubeSubscribe() {
   return (
-    <div className="g-ytsubscribe" 
-      data-channelid={channelId}
-      data-layout={layout}
-      data-count={count}
-    />
+    <div className="flex flex-col items-center gap-2">
+      <h2 className="text-sm font-semibold text-neutral-900">Subscribe to Our Channel</h2>
+      <div className="flex-1 flex justify-center">
+        <iframe
+          title="YouTube Subscribe Button"
+          src="https://www.youtube.com/subscribe_embed?channelid=UCBUNH_lKitDaw"
+          width="115"
+          height="24"
+          frameBorder="0"
+          allowFullScreen
+          loading="lazy"
+          style={{
+            maxWidth: '100%',
+            border: 'none',
+          }}
+        />
+      </div>
+    </div>
   );
-};
-
-export default YouTubeSubscribe; 
+} 
