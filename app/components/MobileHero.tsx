@@ -33,9 +33,17 @@ export default function MobileHero({ posts }: MobileHeroProps) {
     initialInView: true
   });
 
+  // Get the first post's image URL for preloading
+  const firstPostImage = posts[0]?.thumbnail;
+
   useEffect(() => {
+    // Preload the first image
+    if (firstPostImage) {
+      const img = new Image();
+      img.src = firstPostImage;
+    }
     setMounted(true);
-  }, []);
+  }, [firstPostImage]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -80,6 +88,15 @@ export default function MobileHero({ posts }: MobileHeroProps) {
 
   return (
     <div className="lg:hidden bg-gradient-to-b from-neutral-50 to-white">
+      {firstPostImage && (
+        <link
+          rel="preload"
+          as="image"
+          href={firstPostImage}
+          imageSrcSet={`${firstPostImage}?w=280 280w, ${firstPostImage}?w=320 320w`}
+          imageSizes="(max-width: 640px) 280px, 320px"
+        />
+      )}
       <div className="container mx-auto px-4 py-6">
         {/* Header Section */}
         <div 
@@ -123,13 +140,15 @@ export default function MobileHero({ posts }: MobileHeroProps) {
                         alt={post.title}
                         fill
                         className="object-cover"
-                        priority={true}
-                        quality={85}
+                        priority={index === 0}
+                        quality={index === 0 ? 90 : 75}
                         sizes="(max-width: 640px) 280px, 320px"
                         placeholder="blur"
                         blurDataURL={BLUR_DATA_URL}
-                        loading="eager"
-                        fetchPriority="high"
+                        loading={index === 0 ? "eager" : "lazy"}
+                        fetchPriority={index === 0 ? "high" : "auto"}
+                        width={320}
+                        height={240}
                       />
                       {post.category && (
                         <div className="absolute top-3 left-3 px-2 py-1 bg-white/90 backdrop-blur-sm text-neutral-900 text-xs font-medium rounded-full">

@@ -13,6 +13,13 @@ const nextConfig: NextConfig = {
         hostname: '**',
       },
     ],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    contentDispositionType: 'attachment',
+    loader: 'default',
+    path: '/_next/image',
+    domains: ['localhost'],
+    unoptimized: false,
   },
   experimental: {
     optimizeCss: true,
@@ -22,6 +29,9 @@ const nextConfig: NextConfig = {
       logLevel: 'error',
       logDetail: true,
     },
+    scrollRestoration: true,
+    workerThreads: true,
+    optimizeServerReact: true,
   },
   compress: true,
   poweredByHeader: false,
@@ -59,7 +69,39 @@ const nextConfig: NextConfig = {
         },
       }
     }
-    return config
+
+    // Add image optimization
+    if (!isServer) {
+      config.module.rules.push({
+        test: /\.(jpe?g|png|webp|avif)$/i,
+        use: [
+          {
+            loader: 'image-webpack-loader',
+            options: {
+              mozjpeg: {
+                progressive: true,
+                quality: 85,
+              },
+              optipng: {
+                enabled: false,
+              },
+              pngquant: {
+                quality: [0.65, 0.90],
+                speed: 4,
+              },
+              webp: {
+                quality: 85,
+              },
+              avif: {
+                quality: 85,
+              },
+            },
+          },
+        ],
+      });
+    }
+
+    return config;
   },
   headers: async () => {
     return [
@@ -70,7 +112,11 @@ const nextConfig: NextConfig = {
           {
             key: 'Cache-Control',
             value: 'public, max-age=31536000, immutable',
-          }
+          },
+          {
+            key: 'Accept-CH',
+            value: 'DPR, Width, Viewport-Width',
+          },
         ],
       },
       {
